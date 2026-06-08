@@ -1,6 +1,14 @@
 import bcrypt from "bcryptjs";
+import { config } from "dotenv";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { PrismaClient } from "@prisma/client";
+
+import { ensureDatabaseUrl } from "../src/database-url";
+
+config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
+ensureDatabaseUrl();
 
 const prisma = new PrismaClient();
 

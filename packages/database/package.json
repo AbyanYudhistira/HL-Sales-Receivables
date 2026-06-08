@@ -7,8 +7,11 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "prisma generate",
-    "db:generate": "prisma generate"
+    "build": "tsx scripts/with-database-url.ts generate",
+    "db:generate": "tsx scripts/with-database-url.ts generate",
+    "db:migrate": "tsx scripts/with-database-url.ts migrate dev",
+    "db:seed": "tsx scripts/with-database-url.ts db seed",
+    "db:studio": "tsx scripts/with-database-url.ts studio"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0"
@@ -17,6 +20,7 @@
     "@hl/tsconfig": "workspace:*",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.2",
+    "dotenv": "^16.5.0",
     "prisma": "^6.9.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"

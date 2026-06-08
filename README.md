@@ -30,20 +30,30 @@ CREATE DATABASE hl_sales;
 
 ### 2. Environment
 
-Salin dan sesuaikan kredensial Postgres Anda:
+Salin dan sesuaikan kredensial Postgres Anda (cukup variabel `POSTGRES_*`, **tanpa** `DATABASE_URL` manual):
 
 ```bash
 # packages/database/.env
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/hl_sales?schema=public"
-ADMIN_EMAIL="admin@hl.local"
-ADMIN_PASSWORD="admin123"
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password_anda
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=hl_sales
+ADMIN_EMAIL=admin@hl.local
+ADMIN_PASSWORD=admin123
 
 # apps/web/.env.local
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/hl_sales?schema=public"
-AUTH_SECRET="generate-random-32-character-secret"
-ADMIN_EMAIL="admin@hl.local"
-ADMIN_PASSWORD="admin123"
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password_anda
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=hl_sales
+AUTH_SECRET=generate-random-32-character-secret
+ADMIN_EMAIL=admin@hl.local
+ADMIN_PASSWORD=admin123
 ```
+
+`DATABASE_URL` dibuat otomatis dari variabel di atas.
 
 ### 3. Install & Database
 
