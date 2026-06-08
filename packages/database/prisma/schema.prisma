@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductType {
+  LM
+  BR
+}
+
+enum TransactionStatus {
+  PIUTANG
+  LUNAS
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Customer {
+  id              String        @id @default(cuid())
+  nama            String
+  discountLm      Json          @default("[]")
+  discountBr      Json          @default("[]")
+  bonusThreshold  Decimal       @default(0) @db.Decimal(18, 0)
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  transactions    Transaction[]
+  bonusGrants     BonusGrant[]
+}
+
+model Product {
+  id               String            @id @default(cuid())
+  nama             String
+  hargaModal       Decimal           @db.Decimal(18, 0)
+  hargaBase        Decimal           @db.Decimal(18, 0)
+  tipe             ProductType
+  deletedAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  transactionLines TransactionLine[]
+}
+
+model Transaction {
+  id                String            @id @default(cuid())
+  tanggal           DateTime          @db.Date
+  nomorBon          String            @unique
+  customerId        String
+  ongkir            Decimal           @default(0) @db.Decimal(18, 0)
+  deskripsi         String?
+  isBonus           Boolean           @default(false)
+  status            TransactionStatus @default(PIUTANG)
+  tanggalPelunasan  DateTime?         @db.Date
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  customer          Customer          @relation(fields: [customerId], references: [id])
+  lines             TransactionLine[]
+  bonusGrant        BonusGrant?
+}
+
+model TransactionLine {
+  id                  String      @id @default(cuid())
+  transactionId       String
+  productId           String
+  quantity            Int
+  discountedUnitPrice Decimal     @db.Decimal(18, 0)
+  isBonusLine         Boolean     @default(false)
+  transaction         Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product             Product     @relation(fields: [productId], references: [id])
+}
+
+model BonusGrant {
+  id            String      @id @default(cuid())
+  customerId    String
+  transactionId String      @unique
+  bonusCount    Int
+  createdAt     DateTime    @default(now())
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
