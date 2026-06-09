@@ -1,4 +1,5 @@
-import { auth } from "@/lib/auth";
+import { signOut } from "@/lib/auth";
+
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AppLayout({
@@ -6,7 +7,10 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  async function signOutAction() {
+    "use server";
+    await signOut({ redirectTo: "/login" });
+  }
 
-  return <AppShell userName={session?.user?.name}>{children}</AppShell>;
+  return <AppShell signOutAction={signOutAction}>{children}</AppShell>;
 }

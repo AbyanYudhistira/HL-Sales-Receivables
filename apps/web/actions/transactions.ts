@@ -15,7 +15,7 @@ const lineSchema = z.object({
 const transactionSchema = z.object({
   tanggal: z.string().min(1),
   nomorBon: z.string().min(1, "Nomor Bon wajib diisi"),
-  customerId: z.string().min(1, "Customer wajib dipilih"),
+  customerId: z.string().min(1, "Pelanggan wajib dipilih"),
   ongkir: z.coerce.number().min(0),
   deskripsi: z.string().optional(),
   isBonus: z.coerce.boolean(),
@@ -50,13 +50,13 @@ export async function createTransactionAction(formData: FormData) {
 
   try {
     const parsed = parseTransactionForm(formData);
-    await transactionService.createTransaction({
+    const created = await transactionService.createTransaction({
       ...parsed,
       tanggal: new Date(parsed.tanggal),
     });
     revalidatePath("/transactions");
-    revalidatePath("/dashboard");
-    return { success: true as const };
+    revalidatePath("/");
+    return { success: true as const, id: created.id };
   } catch (error) {
     return {
       success: false as const,
@@ -76,7 +76,7 @@ export async function updateTransactionAction(id: string, formData: FormData) {
     });
     revalidatePath("/transactions");
     revalidatePath(`/transactions/${id}`);
-    return { success: true as const };
+    return { success: true as const, id };
   } catch (error) {
     return {
       success: false as const,
@@ -89,5 +89,5 @@ export async function deleteTransactionAction(id: string) {
   await requireAuth();
   await transactionService.deleteTransaction(id);
   revalidatePath("/transactions");
-  revalidatePath("/dashboard");
+  revalidatePath("/");
 }

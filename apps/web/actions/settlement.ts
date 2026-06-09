@@ -22,7 +22,7 @@ export async function settleTransactionAction(
 
   revalidatePath("/transactions");
   revalidatePath(`/transactions/${transactionId}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/");
 }
 
 export async function settleMonthAction(
@@ -42,7 +42,7 @@ export async function settleMonthAction(
   );
 
   revalidatePath(`/customers/${customerId}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   revalidatePath("/transactions");
 
   return count;

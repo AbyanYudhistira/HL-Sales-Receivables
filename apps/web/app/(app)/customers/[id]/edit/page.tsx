@@ -15,11 +15,14 @@ export default async function EditCustomerPage({
   const customer = await customerService.getCustomerById(id);
   if (!customer) notFound();
 
-  const updateAction = updateCustomerAction.bind(null, id);
+  async function updateAction(formData: FormData) {
+    "use server";
+    await updateCustomerAction(id, formData);
+  }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Edit Customer</h1>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <h1 className="font-display text-3xl font-semibold text-foreground">Edit Pelanggan</h1>
       <Card>
         <CustomerForm
           action={updateAction}
@@ -29,7 +32,8 @@ export default async function EditCustomerPage({
             discountBr: parseDiscountSteps(customer.discountBr),
             bonusThreshold: Number(customer.bonusThreshold),
           }}
-          submitLabel="Perbarui"
+          submitLabel="Simpan"
+          returnTo={`/pelanggan/${id}`}
         />
       </Card>
     </div>

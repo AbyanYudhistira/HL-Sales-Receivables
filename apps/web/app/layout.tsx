@@ -1,10 +1,25 @@
 import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
+
+import { AppToaster } from "@/components/ui/sonner";
 
 import "./globals.css";
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
-  title: "HL Sales & Receivables",
-  description: "Aplikasi manajemen penjualan dan piutang HL",
+  title: "HL App — Buku Toko",
+  description: "Catatan penjualan, pelanggan, dan tagihan toko HL",
 };
 
 export default function RootLayout({
@@ -13,8 +28,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
-      <body>{children}</body>
-    </html>
+    <html lang="id" className={`${fraunces.variable} ${inter.variable}`}>
+      <body>
+        {children}
+        <AppToaster />
+      </body>    </html>
   );
 }

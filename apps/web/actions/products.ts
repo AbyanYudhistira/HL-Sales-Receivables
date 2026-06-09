@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { getReturnTo } from "@/lib/safe-return-path";
 import * as productService from "@/lib/services/products";
 
 const productSchema = z.object({
@@ -29,9 +30,29 @@ export async function createProductAction(formData: FormData) {
     tipe: formData.get("tipe"),
   });
 
-  await productService.createProduct(parsed);
+  const product = await productService.createProduct(parsed);
   revalidatePath("/products");
-  redirect("/products");
+
+  if (formData.get("modal") === "true") {
+    return { success: true as const, id: product.id };
+  }
+
+  redirect(getReturnTo(formData, "/barang"));
+}
+
+export async function saveProductAction(formData: FormData) {
+  await requireAuth();
+
+  const parsed = productSchema.parse({
+    nama: formData.get("nama"),
+    hargaModal: formData.get("hargaModal"),
+    hargaBase: formData.get("hargaBase"),
+    tipe: formData.get("tipe"),
+  });
+
+  const product = await productService.createProduct(parsed);
+  revalidatePath("/products");
+  return { success: true as const, id: product.id };
 }
 
 export async function updateProductAction(id: string, formData: FormData) {
@@ -46,7 +67,12 @@ export async function updateProductAction(id: string, formData: FormData) {
 
   await productService.updateProduct(id, parsed);
   revalidatePath("/products");
-  redirect("/products");
+
+  if (formData.get("modal") === "true") {
+    return { success: true as const };
+  }
+
+  redirect(getReturnTo(formData, "/barang"));
 }
 
 export async function deleteProductAction(id: string) {

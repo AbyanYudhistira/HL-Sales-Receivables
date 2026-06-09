@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { getReturnTo } from "@/lib/safe-return-path";
 import * as customerService from "@/lib/services/customers";
 
 const customerSchema = z.object({
@@ -30,9 +31,29 @@ export async function createCustomerAction(formData: FormData) {
     bonusThreshold: formData.get("bonusThreshold"),
   });
 
-  await customerService.createCustomer(parsed);
+  const customer = await customerService.createCustomer(parsed);
   revalidatePath("/customers");
-  redirect("/customers");
+
+  if (formData.get("modal") === "true") {
+    return { success: true as const, id: customer.id };
+  }
+
+  redirect(getReturnTo(formData, "/pelanggan"));
+}
+
+export async function saveCustomerAction(formData: FormData) {
+  await requireAuth();
+
+  const parsed = customerSchema.parse({
+    nama: formData.get("nama"),
+    discountLm: JSON.parse(String(formData.get("discountLm") ?? "[]")),
+    discountBr: JSON.parse(String(formData.get("discountBr") ?? "[]")),
+    bonusThreshold: formData.get("bonusThreshold"),
+  });
+
+  const customer = await customerService.createCustomer(parsed);
+  revalidatePath("/customers");
+  return { success: true as const, id: customer.id };
 }
 
 export async function updateCustomerAction(id: string, formData: FormData) {
@@ -48,7 +69,12 @@ export async function updateCustomerAction(id: string, formData: FormData) {
   await customerService.updateCustomer(id, parsed);
   revalidatePath("/customers");
   revalidatePath(`/customers/${id}`);
-  redirect(`/customers/${id}`);
+
+  if (formData.get("modal") === "true") {
+    return { success: true as const };
+  }
+
+  redirect(getReturnTo(formData, `/pelanggan/${id}`));
 }
 
 export async function deleteCustomerAction(id: string) {

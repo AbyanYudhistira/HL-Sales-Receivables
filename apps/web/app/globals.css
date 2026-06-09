@@ -1,18 +1,111 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8faf6;
-  --foreground: #1a2e1a;
-  --card: #ffffff;
-  --primary: #2d6a4f;
-  --primary-foreground: #ffffff;
-  --muted: #e8efe8;
-  --border: #d4e4d4;
-  --danger: #b91c1c;
+  --background: #faf8f5;
+  --foreground: #2d2d2d;
+  --card: #f0ebe3;
+  --card-foreground: #2d2d2d;
+  --primary: #7d9b76;
+  --primary-foreground: #faf8f5;
+  --secondary: #e8e2d9;
+  --secondary-foreground: #2d2d2d;
+  --muted: #e8e2d9;
+  --muted-foreground: #5c5c5c;
+  --accent: #dce6d8;
+  --accent-foreground: #2d4a2d;
+  --success: #5a8f52;
+  --success-foreground: #faf8f5;
+  --warning: #c4843a;
+  --warning-foreground: #2d2d2d;
+  --info: #5b7fa8;
+  --info-foreground: #faf8f5;
+  --destructive: #b85450;
+  --destructive-foreground: #faf8f5;
+  --border: #ddd5c8;
+  --input: #ddd5c8;
+  --ring: #7d9b76;
+  --brand-panel: oklch(0.42 0.05 145);
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --button-shadow: 0 1px 2px rgba(45, 45, 45, 0.08), 0 1px 3px rgba(45, 45, 45, 0.05);
+  --button-shadow-hover: 0 2px 4px rgba(45, 45, 45, 0.1), 0 1px 3px rgba(45, 45, 45, 0.06);
+  --button-shadow-outline: 0 1px 2px rgba(45, 45, 45, 0.05);
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand-panel: var(--brand-panel);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --shadow-button: var(--button-shadow);
+  --shadow-button-hover: var(--button-shadow-hover);
+  --shadow-button-outline: var(--button-shadow-outline);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

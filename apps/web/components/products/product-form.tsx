@@ -2,7 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IntegerInput } from "@/components/ui/integer-input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface ProductFormProps {
   action: (formData: FormData) => Promise<void>;
@@ -13,50 +16,74 @@ interface ProductFormProps {
     tipe: "LM" | "BR";
   };
   submitLabel?: string;
+  returnTo?: string;
 }
 
-export function ProductForm({ action, initial, submitLabel = "Simpan" }: ProductFormProps) {
+export function ProductForm({
+  action,
+  initial,
+  submitLabel = "Simpan",
+  returnTo = "/barang",
+}: ProductFormProps) {
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-5">
+      <input type="hidden" name="returnTo" value={returnTo} />
       <div>
-        <Label htmlFor="nama">Nama Produk</Label>
-        <Input id="nama" name="nama" defaultValue={initial?.nama} required />
+        <Label htmlFor="nama">Nama</Label>
+        <Input id="nama" name="nama" defaultValue={initial?.nama} required className="mt-2" />
       </div>
+
+      <fieldset>
+        <legend className="mb-2 text-base font-medium">Tipe</legend>
+        <div className="flex flex-wrap gap-3">
+          {(["LM", "BR"] as const).map((value) => (
+            <label
+              key={value}
+              className={cn(
+                "inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-4",
+                (initial?.tipe ?? "LM") === value && !initial
+                  ? "border-primary bg-accent/40"
+                  : "border-border"
+              )}
+            >
+              <input
+                type="radio"
+                name="tipe"
+                value={value}
+                defaultChecked={(initial?.tipe ?? "LM") === value}
+                className="size-4"
+              />
+              {value === "LM" ? "Logam Mulia (LM)" : "Barang Reguler (BR)"}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <div>
-        <Label htmlFor="hargaModal">Harga Modal (Rp)</Label>
-        <Input
-          id="hargaModal"
-          name="hargaModal"
-          type="number"
-          min={0}
-          defaultValue={initial?.hargaModal}
-          required
-        />
-      </div>
-      <div>
-        <Label htmlFor="hargaBase">Harga Base / Jual (Rp)</Label>
-        <Input
+        <Label htmlFor="hargaBase">Harga Jual (Rp)</Label>
+        <IntegerInput
           id="hargaBase"
           name="hargaBase"
-          type="number"
-          min={0}
           defaultValue={initial?.hargaBase}
           required
+          className="mt-2"
         />
       </div>
+
       <div>
-        <Label htmlFor="tipe">Tipe</Label>
-        <select
-          id="tipe"
-          name="tipe"
-          defaultValue={initial?.tipe ?? "LM"}
-          className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm"
-        >
-          <option value="LM">LM</option>
-          <option value="BR">BR</option>
-        </select>
+        <Label htmlFor="hargaModal">Harga Modal (Rp)</Label>
+        <IntegerInput
+          id="hargaModal"
+          name="hargaModal"
+          defaultValue={initial?.hargaModal}
+          required
+          className="mt-2"
+        />
       </div>
-      <Button type="submit">{submitLabel}</Button>
+
+      <Button type="submit" size="lg">
+        {submitLabel}
+      </Button>
     </form>
   );
 }

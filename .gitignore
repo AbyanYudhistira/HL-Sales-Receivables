@@ -9,3 +9,7 @@ packages/database/.env
 apps/web/.env.local
 *.log
 .DS_Store
+
+# Cursor / local prompts
+.cursor/
+prompt/

@@ -14,21 +14,24 @@ export default async function EditProductPage({
   const product = await productService.getProductById(id);
   if (!product) notFound();
 
-  const updateAction = updateProductAction.bind(null, id);
+  async function action(formData: FormData) {
+    "use server";
+    await updateProductAction(id, formData);
+  }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Edit Produk</h1>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <h1 className="font-display text-3xl font-semibold text-foreground">Edit Barang</h1>
       <Card>
         <ProductForm
-          action={updateAction}
+          action={action}
           initial={{
             nama: product.nama,
             hargaModal: Number(product.hargaModal),
             hargaBase: Number(product.hargaBase),
             tipe: product.tipe,
           }}
-          submitLabel="Perbarui"
+          submitLabel="Simpan"
         />
       </Card>
     </div>

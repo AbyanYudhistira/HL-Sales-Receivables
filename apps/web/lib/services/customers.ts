@@ -1,5 +1,7 @@
 import { prisma, type Prisma } from "@hl/database";
 
+import * as transactionService from "@/lib/services/transactions";
+
 export async function listCustomers(search?: string) {
   return prisma.customer.findMany({
     where: {
@@ -10,6 +12,55 @@ export async function listCustomers(search?: string) {
     },
     orderBy: { nama: "asc" },
   });
+}
+
+export async function getCustomersWithSummaries() {
+  const customers = await listCustomers();
+  const transactions = await prisma.transaction.findMany({
+    include: { lines: true },
+  });
+
+  const summaries = new Map<
+    string,
+    { unpaid: number; paid: number; bonusAvailable: number }
+  >();
+
+  for (const customer of customers) {
+    summaries.set(customer.id, { unpaid: 0, paid: 0, bonusAvailable: 0 });
+  }
+
+  for (const tx of transactions) {
+    const summary = summaries.get(tx.customerId);
+    if (!summary) continue;
+
+    const lineTotal = tx.lines.reduce(
+      (sum, line) =>
+        line.isBonusLine
+          ? sum
+          : sum + Number(line.discountedUnitPrice) * line.quantity,
+      0
+    );
+    const owed = lineTotal + Number(tx.ongkir);
+
+    if (tx.status === "PIUTANG") {
+      summary.unpaid += owed;
+    } else {
+      summary.paid += owed;
+    }
+  }
+
+  return Promise.all(
+    customers.map(async (customer) => {
+      const summary = summaries.get(customer.id)!;
+      const bonusInfo = await transactionService.getCustomerBonusInfo(customer.id);
+      return {
+        ...customer,
+        totalUnpaid: summary.unpaid,
+        totalPaid: summary.paid,
+        bonusAvailable: bonusInfo.available,
+      };
+    })
+  );
 }
 
 export async function getCustomerById(id: string) {

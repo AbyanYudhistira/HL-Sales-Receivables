@@ -15,11 +15,22 @@ export interface TransactionLineInput {
 export async function listTransactions(filters?: {
   customerId?: string;
   status?: TransactionStatus;
+  year?: number;
+  month?: number;
 }) {
+  const dateFilter =
+    filters?.year && filters?.month
+      ? {
+          gte: new Date(filters.year, filters.month - 1, 1),
+          lte: new Date(filters.year, filters.month, 0, 23, 59, 59),
+        }
+      : undefined;
+
   return prisma.transaction.findMany({
     where: {
       ...(filters?.customerId ? { customerId: filters.customerId } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
+      ...(dateFilter ? { tanggal: dateFilter } : {}),
     },
     include: {
       customer: true,
@@ -94,7 +105,7 @@ export async function createTransaction(data: {
     where: { nomorBon: data.nomorBon },
   });
   if (existing) {
-    throw new Error("Nomor Bon sudah digunakan");
+    throw new Error("No. bon ini sudah dipakai.");
   }
 
   const lineInputs = await buildLineComputations(
@@ -184,7 +195,7 @@ export async function updateTransaction(
   const existing = await prisma.transaction.findFirst({
     where: { nomorBon: data.nomorBon, NOT: { id } },
   });
-  if (existing) throw new Error("Nomor Bon sudah digunakan");
+  if (existing) throw new Error("No. bon ini sudah dipakai.");
 
   const lineInputs = await buildLineComputations(
     data.customerId,
