@@ -18,11 +18,21 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Beranda", icon: Home },
-  { href: "/pelanggan", label: "Pelanggan", icon: Users },
-  { href: "/barang", label: "Barang", icon: Package },
-  { href: "/penjualan", label: "Penjualan", icon: Receipt },
-  { href: "/laporan", label: "Laporan", icon: BarChart3 },
+  { href: "/", label: "Beranda", icon: Home, aliases: [] as string[] },
+  {
+    href: "/customers",
+    label: "Pelanggan",
+    icon: Users,
+    aliases: ["/pelanggan"],
+  },
+  { href: "/products", label: "Barang", icon: Package, aliases: ["/barang"] },
+  {
+    href: "/transactions",
+    label: "Penjualan",
+    icon: Receipt,
+    aliases: ["/penjualan"],
+  },
+  { href: "/laporan", label: "Laporan", icon: BarChart3, aliases: [] as string[] },
 ];
 
 function NavLinks({
@@ -36,18 +46,20 @@ function NavLinks({
 
   return (
     <nav className={cn("flex flex-col gap-1", className)}>
-      {navItems.map(({ href, label, icon: Icon }) => {
+      {navItems.map(({ href, label, icon: Icon, aliases }) => {
         const active =
           pathname === href ||
           (href !== "/" && pathname.startsWith(`${href}/`)) ||
-          (href === "/pelanggan" && pathname.startsWith("/customers")) ||
-          (href === "/barang" && pathname.startsWith("/products")) ||
-          (href === "/penjualan" && pathname.startsWith("/transactions"));
+          aliases.some(
+            (alias) =>
+              pathname === alias || pathname.startsWith(`${alias}/`)
+          );
 
         return (
           <Link
             key={href}
             href={href}
+            prefetch={false}
             onClick={onNavigate}
             className={cn(
               "flex min-h-12 items-center gap-3 rounded-xl px-4 text-[17px] font-medium transition-colors",
