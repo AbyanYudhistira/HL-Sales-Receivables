@@ -1,6 +1,14 @@
-import { prisma, type Prisma } from "@hl/database";
+import { prisma } from "@hl/database";
 
 import * as transactionService from "@/lib/services/transactions";
+
+export async function listCustomerOptions() {
+  return prisma.customer.findMany({
+    where: { deletedAt: null },
+    select: { id: true, nama: true },
+    orderBy: { nama: "asc" },
+  });
+}
 
 export async function listCustomers(search?: string) {
   return prisma.customer.findMany({
@@ -15,57 +23,81 @@ export async function listCustomers(search?: string) {
 }
 
 export async function getCustomersWithSummaries() {
-  const customers = await listCustomers();
-  const [transactions, bonusMap] = await Promise.all([
-    prisma.transaction.findMany({
-      select: {
-        customerId: true,
-        status: true,
-        ongkir: true,
-        lines: {
-          select: {
-            discountedUnitPrice: true,
-            quantity: true,
-            isBonusLine: true,
-          },
-        },
-      },
-    }),
+  const customers = await prisma.customer.findMany({
+    where: { deletedAt: null },
+    select: { id: true, nama: true, bonusThreshold: true },
+    orderBy: { nama: "asc" },
+  });
+
+  const [summaryRows, bonusMap] = await Promise.all([
+    prisma.$queryRaw<
+      {
+        id: string;
+        nama: string;
+        totalUnpaid: unknown;
+        totalPaid: unknown;
+      }[]
+    >`
+      WITH tx_totals AS (
+        SELECT
+          t.id,
+          t."customerId",
+          t.status,
+          t.ongkir,
+          COALESCE(
+            SUM(
+              CASE
+                WHEN tl."isBonusLine" THEN 0
+                ELSE tl."discountedUnitPrice" * tl.quantity
+              END
+            ),
+            0
+          ) AS line_total
+        FROM "Transaction" t
+        LEFT JOIN "TransactionLine" tl ON tl."transactionId" = t.id
+        GROUP BY t.id, t."customerId", t.status, t.ongkir
+      )
+      SELECT
+        c.id,
+        c.nama,
+        COALESCE(
+          SUM(
+            CASE
+              WHEN tt.status = 'PIUTANG'::"TransactionStatus"
+              THEN tt.line_total + tt.ongkir
+              ELSE 0
+            END
+          ),
+          0
+        ) AS "totalUnpaid",
+        COALESCE(
+          SUM(
+            CASE
+              WHEN tt.status = 'LUNAS'::"TransactionStatus"
+              THEN tt.line_total + tt.ongkir
+              ELSE 0
+            END
+          ),
+          0
+        ) AS "totalPaid"
+      FROM "Customer" c
+      LEFT JOIN tx_totals tt ON tt."customerId" = c.id
+      WHERE c."deletedAt" IS NULL
+      GROUP BY c.id, c.nama
+      ORDER BY c.nama ASC
+    `,
     transactionService.getBonusAvailableMap(customers),
   ]);
 
-  const summaries = new Map<string, { unpaid: number; paid: number }>();
-
-  for (const customer of customers) {
-    summaries.set(customer.id, { unpaid: 0, paid: 0 });
-  }
-
-  for (const tx of transactions) {
-    const summary = summaries.get(tx.customerId);
-    if (!summary) continue;
-
-    const lineTotal = tx.lines.reduce(
-      (sum, line) =>
-        line.isBonusLine
-          ? sum
-          : sum + Number(line.discountedUnitPrice) * line.quantity,
-      0
-    );
-    const owed = lineTotal + Number(tx.ongkir);
-
-    if (tx.status === "PIUTANG") {
-      summary.unpaid += owed;
-    } else {
-      summary.paid += owed;
-    }
-  }
+  const summaryById = new Map(summaryRows.map((row) => [row.id, row]));
 
   return customers.map((customer) => {
-    const summary = summaries.get(customer.id)!;
+    const summary = summaryById.get(customer.id);
     return {
-      ...customer,
-      totalUnpaid: summary.unpaid,
-      totalPaid: summary.paid,
+      id: customer.id,
+      nama: customer.nama,
+      totalUnpaid: Number(summary?.totalUnpaid ?? 0),
+      totalPaid: Number(summary?.totalPaid ?? 0),
       bonusAvailable: bonusMap.get(customer.id) ?? 0,
     };
   });
@@ -120,70 +152,159 @@ export async function softDeleteCustomer(id: string) {
   });
 }
 
+export type CustomerMonthlyTotals = {
+  totalPiutang: number;
+  totalDibayar: number;
+  totalOmzet: number;
+  totalLaba: number;
+  omzetLm: number;
+  omzetBr: number;
+};
+
+export type CustomerMonthlyTransaction = {
+  id: string;
+  nomorBon: string;
+  tanggal: Date;
+  status: "PIUTANG" | "LUNAS";
+  isBonus: boolean;
+  total: number;
+};
+
 export async function getCustomerMonthlySummary(
   customerId: string,
   year: number,
   month: number
-) {
+): Promise<{
+  transactions: CustomerMonthlyTransaction[];
+  totals: CustomerMonthlyTotals;
+}> {
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0, 23, 59, 59);
 
-  const transactions = await prisma.transaction.findMany({
-    where: {
+  const [transactions, totalsRows, typeRows] = await Promise.all([
+    transactionService.listTransactionsForTable({
+      year,
+      month,
       customerId,
-      tanggal: { gte: start, lte: end },
-    },
-    include: {
-      lines: { include: { product: true } },
-    },
-    orderBy: { tanggal: "desc" },
-  });
+    }),
+    prisma.$queryRaw<
+      {
+        totalPiutang: unknown;
+        totalDibayar: unknown;
+        totalOmzet: unknown;
+        totalLaba: unknown;
+      }[]
+    >`
+      WITH tx_totals AS (
+        SELECT
+          t.id,
+          t.status,
+          t."isBonus",
+          t.ongkir,
+          COALESCE(
+            SUM(
+              CASE
+                WHEN tl."isBonusLine" THEN 0
+                ELSE tl."discountedUnitPrice" * tl.quantity
+              END
+            ),
+            0
+          ) AS line_omzet,
+          COALESCE(
+            SUM(
+              CASE
+                WHEN tl."isBonusLine" THEN 0
+                ELSE (tl."discountedUnitPrice" - p."hargaModal") * tl.quantity
+              END
+            ),
+            0
+          ) AS line_laba
+        FROM "Transaction" t
+        LEFT JOIN "TransactionLine" tl ON tl."transactionId" = t.id
+        LEFT JOIN "Product" p ON p.id = tl."productId"
+        WHERE t."customerId" = ${customerId}
+          AND t.tanggal >= ${start}::date
+          AND t.tanggal <= ${end}::date
+        GROUP BY t.id, t.status, t."isBonus", t.ongkir
+      )
+      SELECT
+        COALESCE(
+          SUM(
+            CASE
+              WHEN status = 'PIUTANG'::"TransactionStatus"
+              THEN line_omzet + ongkir
+              ELSE 0
+            END
+          ),
+          0
+        ) AS "totalPiutang",
+        COALESCE(
+          SUM(
+            CASE
+              WHEN status = 'LUNAS'::"TransactionStatus"
+              THEN line_omzet + ongkir
+              ELSE 0
+            END
+          ),
+          0
+        ) AS "totalDibayar",
+        COALESCE(
+          SUM(
+            CASE
+              WHEN status = 'LUNAS'::"TransactionStatus" AND NOT "isBonus"
+              THEN line_omzet
+              ELSE 0
+            END
+          ),
+          0
+        ) AS "totalOmzet",
+        COALESCE(
+          SUM(
+            CASE
+              WHEN status = 'LUNAS'::"TransactionStatus" AND NOT "isBonus"
+              THEN line_laba
+              ELSE 0
+            END
+          ),
+          0
+        ) AS "totalLaba"
+      FROM tx_totals
+    `,
+    prisma.$queryRaw<{ tipe: string; omzet: unknown }[]>`
+      SELECT
+        p.tipe::text AS tipe,
+        COALESCE(SUM(tl."discountedUnitPrice" * tl.quantity), 0) AS omzet
+      FROM "TransactionLine" tl
+      INNER JOIN "Transaction" t ON t.id = tl."transactionId"
+      INNER JOIN "Product" p ON p.id = tl."productId"
+      WHERE t."customerId" = ${customerId}
+        AND t.tanggal >= ${start}::date
+        AND t.tanggal <= ${end}::date
+        AND t.status = 'LUNAS'::"TransactionStatus"
+        AND t."isBonus" = false
+        AND tl."isBonusLine" = false
+      GROUP BY p.tipe
+    `,
+  ]);
 
-  let totalPiutang = 0;
-  let totalDibayar = 0;
-  let totalOmzet = 0;
-  let totalLaba = 0;
-  let omzetLm = 0;
-  let omzetBr = 0;
-
-  for (const tx of transactions) {
-    const lineOmzet = tx.lines.reduce(
-      (sum, line) => sum + Number(line.discountedUnitPrice) * line.quantity,
-      0
-    );
-    const lineLaba = tx.lines.reduce((sum, line) => {
-      if (line.isBonusLine) return sum;
-      const modal = Number(line.product.hargaModal);
-      return sum + (Number(line.discountedUnitPrice) - modal) * line.quantity;
-    }, 0);
-    const owed = lineOmzet + Number(tx.ongkir);
-
-    if (tx.status === "PIUTANG") {
-      totalPiutang += owed;
-    } else {
-      totalDibayar += owed;
-      if (!tx.isBonus) {
-        totalOmzet += lineOmzet;
-        totalLaba += lineLaba;
-        for (const line of tx.lines) {
-          if (line.isBonusLine) continue;
-          const omzet = Number(line.discountedUnitPrice) * line.quantity;
-          if (line.product.tipe === "LM") omzetLm += omzet;
-          else omzetBr += omzet;
-        }
-      }
-    }
-  }
+  const totalsRow = totalsRows[0];
 
   return {
-    transactions,
+    transactions: transactions.map((tx) => ({
+      id: tx.id,
+      nomorBon: tx.nomorBon,
+      tanggal: tx.tanggal,
+      status: tx.status,
+      isBonus: tx.isBonus,
+      total: tx.total,
+    })),
     totals: {
-      totalPiutang,
-      totalDibayar,
-      totalOmzet,
-      totalLaba,
-      omzetLm,
-      omzetBr,
+      totalPiutang: Number(totalsRow?.totalPiutang ?? 0),
+      totalDibayar: Number(totalsRow?.totalDibayar ?? 0),
+      totalOmzet: Number(totalsRow?.totalOmzet ?? 0),
+      totalLaba: Number(totalsRow?.totalLaba ?? 0),
+      omzetLm: Number(typeRows.find((row) => row.tipe === "LM")?.omzet ?? 0),
+      omzetBr: Number(typeRows.find((row) => row.tipe === "BR")?.omzet ?? 0),
     },
   };
 }

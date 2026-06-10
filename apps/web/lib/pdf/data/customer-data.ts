@@ -11,9 +11,11 @@ export async function buildCustomerPdfData(
   const customer = await customerService.getCustomerById(id);
   if (!customer) return null;
 
-  const [{ transactions, totals }, bonusInfo] = await Promise.all([
+  const [{ transactions, totals }, bonusMap] = await Promise.all([
     customerService.getCustomerMonthlySummary(id, year, month),
-    transactionService.getCustomerBonusInfo(id),
+    transactionService.getBonusAvailableMap([
+      { id: customer.id, bonusThreshold: customer.bonusThreshold },
+    ]),
   ]);
 
   return {
@@ -21,27 +23,16 @@ export async function buildCustomerPdfData(
     month,
     year,
     bonusThreshold: Number(customer.bonusThreshold),
-    bonusAvailable: bonusInfo.available,
+    bonusAvailable: bonusMap.get(customer.id) ?? 0,
     discountLm: parseDiscountSteps(customer.discountLm),
     discountBr: parseDiscountSteps(customer.discountBr),
     totals,
-    transactions: transactions.map((tx) => {
-      const total =
-        tx.lines.reduce(
-          (sum, line) =>
-            line.isBonusLine
-              ? sum
-              : sum + Number(line.discountedUnitPrice) * line.quantity,
-          0
-        ) + Number(tx.ongkir);
-
-      return {
-        nomorBon: tx.nomorBon,
-        tanggal: tx.tanggal.toISOString(),
-        total,
-        status: tx.status,
-        isBonus: tx.isBonus,
-      };
-    }),
+    transactions: transactions.map((tx) => ({
+      nomorBon: tx.nomorBon,
+      tanggal: tx.tanggal.toISOString(),
+      total: tx.total,
+      status: tx.status,
+      isBonus: tx.isBonus,
+    })),
   };
 }

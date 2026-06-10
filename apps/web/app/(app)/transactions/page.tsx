@@ -21,7 +21,7 @@ export default async function TransactionsPage({
   const customerId = query.customerId ?? "";
 
   const [transactions, customers] = await Promise.all([
-    transactionService.listTransactions({
+    transactionService.listTransactionsForTable({
       year,
       month,
       ...(status === "LUNAS" || status === "PIUTANG"
@@ -29,7 +29,7 @@ export default async function TransactionsPage({
         : {}),
       ...(customerId ? { customerId } : {}),
     }),
-    customerService.listCustomers(),
+    customerService.listCustomerOptions(),
   ]);
 
   return (
@@ -38,28 +38,17 @@ export default async function TransactionsPage({
       initialYear={year}
       initialStatus={status}
       initialCustomerId={customerId}
-      customers={customers.map((customer) => ({ id: customer.id, nama: customer.nama }))}
-      transactions={transactions.map((tx) => {
-        const total =
-          tx.lines.reduce(
-            (sum, line) =>
-              line.isBonusLine
-                ? sum
-                : sum + Number(line.discountedUnitPrice) * line.quantity,
-            0
-          ) + Number(tx.ongkir);
-
-        return {
-          id: tx.id,
-          nomorBon: tx.nomorBon,
-          customerId: tx.customerId,
-          customerName: tx.customer.nama,
-          tanggal: tx.tanggal.toISOString(),
-          total,
-          status: tx.status,
-          isBonus: tx.isBonus,
-        };
-      })}
+      customers={customers}
+      transactions={transactions.map((tx) => ({
+        id: tx.id,
+        nomorBon: tx.nomorBon,
+        customerId: tx.customerId,
+        customerName: tx.customerName,
+        tanggal: tx.tanggal.toISOString(),
+        total: tx.total,
+        status: tx.status,
+        isBonus: tx.isBonus,
+      }))}
     />
   );
 }

@@ -2,7 +2,12 @@ import {
   computeBonusAvailable,
   computeTransactionTotals,
 } from "@hl/calculations";
-import { prisma, type ProductType, type TransactionStatus } from "@hl/database";
+import {
+  Prisma,
+  prisma,
+  type ProductType,
+  type TransactionStatus,
+} from "@hl/database";
 
 import { parseDiscountSteps } from "@/lib/format-idr";
 
@@ -44,6 +49,96 @@ export async function listTransactions(filters?: {
     },
     orderBy: { tanggal: "desc" },
   });
+}
+
+export type TransactionTableRow = {
+  id: string;
+  nomorBon: string;
+  customerId: string;
+  customerName: string;
+  tanggal: Date;
+  total: number;
+  status: TransactionStatus;
+  isBonus: boolean;
+};
+
+export async function listTransactionsForTable(filters: {
+  year: number;
+  month: number;
+  customerId?: string;
+  status?: TransactionStatus;
+}): Promise<TransactionTableRow[]> {
+  const start = new Date(filters.year, filters.month - 1, 1);
+  const end = new Date(filters.year, filters.month, 0, 23, 59, 59);
+
+  const customerFilter = filters.customerId
+    ? Prisma.sql`AND t."customerId" = ${filters.customerId}`
+    : Prisma.empty;
+
+  const statusFilter = filters.status
+    ? Prisma.sql`AND t.status = ${filters.status}::"TransactionStatus"`
+    : Prisma.empty;
+
+  const rows = await prisma.$queryRaw<
+    {
+      id: string;
+      nomorBon: string;
+      customerId: string;
+      customerName: string;
+      tanggal: Date;
+      lineTotal: unknown;
+      ongkir: unknown;
+      status: TransactionStatus;
+      isBonus: boolean;
+    }[]
+  >`
+    SELECT
+      t.id,
+      t."nomorBon",
+      t."customerId",
+      c.nama AS "customerName",
+      t.tanggal,
+      t.ongkir,
+      t.status,
+      t."isBonus",
+      COALESCE(
+        SUM(
+          CASE
+            WHEN tl."isBonusLine" THEN 0
+            ELSE tl."discountedUnitPrice" * tl.quantity
+          END
+        ),
+        0
+      ) AS "lineTotal"
+    FROM "Transaction" t
+    INNER JOIN "Customer" c ON c.id = t."customerId"
+    LEFT JOIN "TransactionLine" tl ON tl."transactionId" = t.id
+    WHERE t.tanggal >= ${start}::date
+      AND t.tanggal <= ${end}::date
+      ${customerFilter}
+      ${statusFilter}
+    GROUP BY
+      t.id,
+      t."nomorBon",
+      t."customerId",
+      c.nama,
+      t.tanggal,
+      t.ongkir,
+      t.status,
+      t."isBonus"
+    ORDER BY t.tanggal DESC
+  `;
+
+  return rows.map((row) => ({
+    id: row.id,
+    nomorBon: row.nomorBon,
+    customerId: row.customerId,
+    customerName: row.customerName,
+    tanggal: row.tanggal,
+    total: Number(row.lineTotal) + Number(row.ongkir),
+    status: row.status,
+    isBonus: row.isBonus,
+  }));
 }
 
 export async function getTransactionById(id: string) {

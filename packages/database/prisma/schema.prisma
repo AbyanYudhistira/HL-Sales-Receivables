@@ -38,6 +38,8 @@ model Customer {
   updatedAt       DateTime      @updatedAt
   transactions    Transaction[]
   bonusGrants     BonusGrant[]
+
+  @@index([deletedAt])
 }
 
 model Product {
@@ -50,6 +52,8 @@ model Product {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   transactionLines TransactionLine[]
+
+  @@index([deletedAt])
 }
 
 model Transaction {
@@ -67,6 +71,13 @@ model Transaction {
   customer          Customer          @relation(fields: [customerId], references: [id])
   lines             TransactionLine[]
   bonusGrant        BonusGrant?
+
+  @@index([tanggal])
+  @@index([customerId, tanggal])
+  @@index([status, tanggal])
+  @@index([customerId, status, tanggal])
+  @@index([status, isBonus, tanggal])
+  @@index([customerId, status, isBonus])
 }
 
 model TransactionLine {
@@ -78,6 +89,8 @@ model TransactionLine {
   isBonusLine         Boolean     @default(false)
   transaction         Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   product             Product     @relation(fields: [productId], references: [id])
+
+  @@index([transactionId])
 }
 
 model BonusGrant {
@@ -88,4 +101,6 @@ model BonusGrant {
   createdAt     DateTime    @default(now())
   customer      Customer    @relation(fields: [customerId], references: [id])
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
 }

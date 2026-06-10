@@ -18,15 +18,18 @@ export default async function CustomerDetailPage({
   const year = Number(query.year ?? now.getFullYear());
   const month = Number(query.month ?? now.getMonth() + 1);
 
-  const [customer, monthlySummary, bonusInfo] = await Promise.all([
-    customerService.getCustomerById(id),
-    customerService.getCustomerMonthlySummary(id, year, month),
-    transactionService.getCustomerBonusInfo(id),
-  ]);
-
+  const customer = await customerService.getCustomerById(id);
   if (!customer) notFound();
 
+  const [monthlySummary, bonusMap] = await Promise.all([
+    customerService.getCustomerMonthlySummary(id, year, month),
+    transactionService.getBonusAvailableMap([
+      { id: customer.id, bonusThreshold: customer.bonusThreshold },
+    ]),
+  ]);
+
   const { transactions, totals } = monthlySummary;
+  const bonusAvailable = bonusMap.get(customer.id) ?? 0;
 
   return (
     <CustomerDetailClient
@@ -40,26 +43,15 @@ export default async function CustomerDetailPage({
       year={year}
       month={month}
       totals={totals}
-      bonusAvailable={bonusInfo.available}
-      transactions={transactions.map((tx) => {
-        const total =
-          tx.lines.reduce(
-            (sum, line) =>
-              line.isBonusLine
-                ? sum
-                : sum + Number(line.discountedUnitPrice) * line.quantity,
-            0
-          ) + Number(tx.ongkir);
-
-        return {
-          id: tx.id,
-          nomorBon: tx.nomorBon,
-          tanggal: tx.tanggal.toISOString(),
-          status: tx.status,
-          total,
-          isBonus: tx.isBonus,
-        };
-      })}
+      bonusAvailable={bonusAvailable}
+      transactions={transactions.map((tx) => ({
+        id: tx.id,
+        nomorBon: tx.nomorBon,
+        tanggal: tx.tanggal.toISOString(),
+        status: tx.status,
+        total: tx.total,
+        isBonus: tx.isBonus,
+      }))}
     />
   );
 }
