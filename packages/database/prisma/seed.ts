@@ -3,14 +3,13 @@ import { config } from "dotenv";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PrismaClient } from "@prisma/client";
-
+import { createPrismaClient } from "../src/create-prisma-client";
 import { ensureDatabaseUrl } from "../src/database-url";
 
 config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
 ensureDatabaseUrl();
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   const email = process.env.ADMIN_EMAIL ?? "admin@hl.local";
