@@ -87,7 +87,7 @@ export function CustomerDetailClient({
     <div className="space-y-12">
       <div className="space-y-4">
         <Link
-          href="/pelanggan"
+          href="/customers"
           className="inline-flex min-h-12 items-center gap-2 text-base font-medium text-primary hover:text-primary/80"
         >
           <ArrowLeft className="size-5" aria-hidden />
@@ -193,7 +193,7 @@ export function CustomerDetailClient({
                   <StatusBadge status={tx.status === "LUNAS" ? "paid" : "unpaid"} />
                 </TableCell>
                 <TableCell>
-                  <Link href={`/penjualan/${tx.id}`}>
+                  <Link href={`/transactions/${tx.id}`}>
                     <Button variant="ghost">Lihat</Button>
                   </Link>
                 </TableCell>
@@ -208,7 +208,7 @@ export function CustomerDetailClient({
           Tandai 1 Bulan Sudah Bayar
         </Button>
         <DownloadPdfButton
-          href={`/api/pdf/pelanggan/${customerId}?month=${month}&year=${year}`}
+          href={`/api/pdf/customers/${customerId}?month=${month}&year=${year}`}
           filename={`pelanggan-${sanitizeFilename(customer.nama)}-${sanitizeFilename(formatMonthYear(month, year))}.pdf`}
           size="lg"
           variant="outline"
@@ -235,7 +235,7 @@ export function CustomerDetailClient({
         onCancel={() => setDeleteOpen(false)}
         onConfirm={async () => {
           await deleteCustomerAction(customerId);
-          router.push("/pelanggan");
+          router.push("/customers");
         }}
       />
 

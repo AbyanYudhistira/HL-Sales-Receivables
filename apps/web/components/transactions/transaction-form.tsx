@@ -64,8 +64,8 @@ export function TransactionForm({
   customers,
   products,
   initial,
-  cancelHref = "/penjualan",
-  successHref = "/penjualan",
+  cancelHref = "/transactions",
+  successHref = "/transactions",
 }: TransactionFormProps) {
   const router = useRouter();
   const [customerId, setCustomerId] = useState(initial?.customerId ?? "");

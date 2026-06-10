@@ -54,8 +54,8 @@ export default async function EditTransactionPage({
           hargaBase: Number(p.hargaBase),
           hargaModal: Number(p.hargaModal),
         }))}
-        cancelHref={`/penjualan/${id}`}
-        successHref={`/penjualan/${id}`}
+        cancelHref={`/transactions/${id}`}
+        successHref={`/transactions/${id}`}
         initial={{
           tanggal: new Date(tx.tanggal).toISOString().slice(0, 10),
           nomorBon: tx.nomorBon,

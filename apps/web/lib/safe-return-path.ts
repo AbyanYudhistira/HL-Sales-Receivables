@@ -1,10 +1,7 @@
 const ALLOWED_PREFIXES = [
   "/",
-  "/pelanggan",
   "/customers",
-  "/barang",
   "/products",
-  "/penjualan",
   "/transactions",
   "/laporan",
 ] as const;

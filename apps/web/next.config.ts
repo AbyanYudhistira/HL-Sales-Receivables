@@ -13,15 +13,7 @@ const nextConfig: NextConfig = {
     "/*": ["../../node_modules/.pnpm/**/node_modules/.prisma/client/**"],
   },
   async redirects() {
-    return [
-      { source: "/dashboard", destination: "/", permanent: true },
-      { source: "/pelanggan", destination: "/customers", permanent: false },
-      { source: "/pelanggan/:id", destination: "/customers/:id", permanent: false },
-      { source: "/barang", destination: "/products", permanent: false },
-      { source: "/penjualan", destination: "/transactions", permanent: false },
-      { source: "/penjualan/baru", destination: "/transactions/new", permanent: false },
-      { source: "/penjualan/:id", destination: "/transactions/:id", permanent: false },
-    ];
+    return [{ source: "/dashboard", destination: "/", permanent: true }];
   },
 };
 

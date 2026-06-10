@@ -12,7 +12,7 @@ export default function NewCustomerPage() {
     <div className="mx-auto max-w-2xl space-y-8">
       <h1 className="font-display text-3xl font-semibold text-foreground">Tambah Pelanggan</h1>
       <Card>
-        <CustomerForm action={action} submitLabel="Simpan" returnTo="/pelanggan" />
+        <CustomerForm action={action} submitLabel="Simpan" returnTo="/customers" />
       </Card>
     </div>
   );

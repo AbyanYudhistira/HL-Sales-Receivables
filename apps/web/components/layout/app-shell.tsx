@@ -47,37 +47,11 @@ const SIDEBAR_STORAGE_KEY = "hl-sidebar-collapsed";
 
 
 const navItems = [
-
-  { href: "/", label: "Beranda", icon: Home, aliases: [] as string[] },
-
-  {
-
-    href: "/customers",
-
-    label: "Pelanggan",
-
-    icon: Users,
-
-    aliases: ["/pelanggan"],
-
-  },
-
-  { href: "/products", label: "Barang", icon: Package, aliases: ["/barang"] },
-
-  {
-
-    href: "/transactions",
-
-    label: "Penjualan",
-
-    icon: Receipt,
-
-    aliases: ["/penjualan"],
-
-  },
-
-  { href: "/laporan", label: "Laporan", icon: BarChart3, aliases: [] as string[] },
-
+  { href: "/", label: "Beranda", icon: Home },
+  { href: "/customers", label: "Pelanggan", icon: Users },
+  { href: "/products", label: "Barang", icon: Package },
+  { href: "/transactions", label: "Penjualan", icon: Receipt },
+  { href: "/laporan", label: "Laporan", icon: BarChart3 },
 ];
 
 
@@ -108,21 +82,10 @@ function NavLinks({
 
     <nav className={cn("flex flex-col gap-1", className)}>
 
-      {navItems.map(({ href, label, icon: Icon, aliases }) => {
-
+      {navItems.map(({ href, label, icon: Icon }) => {
         const active =
-
           pathname === href ||
-
-          (href !== "/" && pathname.startsWith(`${href}/`)) ||
-
-          aliases.some(
-
-            (alias) =>
-
-              pathname === alias || pathname.startsWith(`${alias}/`)
-
-          );
+          (href !== "/" && pathname.startsWith(`${href}/`));
 
 
 

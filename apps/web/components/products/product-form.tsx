@@ -23,7 +23,7 @@ export function ProductForm({
   action,
   initial,
   submitLabel = "Simpan",
-  returnTo = "/barang",
+  returnTo = "/products",
 }: ProductFormProps) {
   return (
     <form action={action} className="space-y-5">

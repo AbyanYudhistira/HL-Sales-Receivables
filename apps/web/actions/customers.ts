@@ -38,7 +38,7 @@ export async function createCustomerAction(formData: FormData) {
     return { success: true as const, id: customer.id };
   }
 
-  redirect(getReturnTo(formData, "/pelanggan"));
+  redirect(getReturnTo(formData, "/customers"));
 }
 
 export async function saveCustomerAction(formData: FormData) {
@@ -74,7 +74,7 @@ export async function updateCustomerAction(id: string, formData: FormData) {
     return { success: true as const };
   }
 
-  redirect(getReturnTo(formData, `/pelanggan/${id}`));
+  redirect(getReturnTo(formData, `/customers/${id}`));
 }
 
 export async function deleteCustomerAction(id: string) {

@@ -33,7 +33,7 @@ export default async function EditCustomerPage({
             bonusThreshold: Number(customer.bonusThreshold),
           }}
           submitLabel="Simpan"
-          returnTo={`/pelanggan/${id}`}
+          returnTo={`/customers/${id}`}
         />
       </Card>
     </div>

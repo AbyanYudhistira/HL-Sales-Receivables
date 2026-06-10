@@ -37,7 +37,7 @@ export async function createProductAction(formData: FormData) {
     return { success: true as const, id: product.id };
   }
 
-  redirect(getReturnTo(formData, "/barang"));
+  redirect(getReturnTo(formData, "/products"));
 }
 
 export async function saveProductAction(formData: FormData) {
@@ -72,7 +72,7 @@ export async function updateProductAction(id: string, formData: FormData) {
     return { success: true as const };
   }
 
-  redirect(getReturnTo(formData, "/barang"));
+  redirect(getReturnTo(formData, "/products"));
 }
 
 export async function deleteProductAction(id: string) {

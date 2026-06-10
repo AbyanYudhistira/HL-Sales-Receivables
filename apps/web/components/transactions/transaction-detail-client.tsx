@@ -139,7 +139,7 @@ export function TransactionDetailClient({
               Tandai Sudah Bayar
             </Button>
           )}
-          <Link href={`/penjualan/baru?edit=${transactionId}`}>
+          <Link href={`/transactions/new?edit=${transactionId}`}>
             <Button size="lg" variant="outline" className="w-full sm:w-auto">
               Edit
             </Button>
@@ -170,7 +170,7 @@ export function TransactionDetailClient({
         onCancel={() => setDeleteOpen(false)}
         onConfirm={async () => {
           await deleteTransactionAction(transactionId);
-          router.push("/penjualan");
+          router.push("/transactions");
         }}
       />
 

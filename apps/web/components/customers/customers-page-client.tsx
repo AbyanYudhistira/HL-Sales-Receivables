@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -38,7 +39,7 @@ export function CustomersPageClient({ customers }: { customers: CustomerRow[] })
   }, [customers, search]);
 
   function navigateToCustomer(id: string) {
-    router.push(`/pelanggan/${id}`);
+    router.push(`/customers/${id}`);
   }
 
   return (
@@ -74,6 +75,7 @@ export function CustomersPageClient({ customers }: { customers: CustomerRow[] })
                 <TableHeader>Total Belum Bayar</TableHeader>
                 <TableHeader>Total Sudah Bayar</TableHeader>
                 <TableHeader>Hadiah</TableHeader>
+                <TableHeader>Aksi</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -98,6 +100,14 @@ export function CustomersPageClient({ customers }: { customers: CustomerRow[] })
                     {customer.bonusAvailable > 0 ? (
                       <GiftBadge>Dapat {customer.bonusAvailable} Hadiah</GiftBadge>
                     ) : null}
+                  </TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/customers/${customer.id}`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Button variant="ghost">Lihat</Button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}

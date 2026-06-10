@@ -82,14 +82,14 @@ export function TransactionsPageClient({
       if (match) params.set("customerId", match.id);
     }
     setPage(1);
-    router.push(`/penjualan?${params.toString()}`);
+    router.push(`/transactions?${params.toString()}`);
   }
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <h1 className="font-display text-3xl font-semibold text-foreground">Penjualan</h1>
-        <Link href="/penjualan/baru">
+        <Link href="/transactions/new">
           <Button size="lg">+ Catat Penjualan Baru</Button>
         </Link>
       </div>
@@ -185,11 +185,11 @@ export function TransactionsPageClient({
                   role="button"
                   tabIndex={0}
                   className="cursor-pointer hover:bg-accent/30"
-                  onClick={() => router.push(`/penjualan/${tx.id}`)}
+                  onClick={() => router.push(`/transactions/${tx.id}`)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      router.push(`/penjualan/${tx.id}`);
+                      router.push(`/transactions/${tx.id}`);
                     }
                   }}
                 >
@@ -206,7 +206,7 @@ export function TransactionsPageClient({
                     <StatusBadge status={tx.status === "LUNAS" ? "paid" : "unpaid"} />
                   </TableCell>
                   <TableCell>
-                    <Link href={`/penjualan/${tx.id}`} onClick={(event) => event.stopPropagation()}>
+                    <Link href={`/transactions/${tx.id}`} onClick={(event) => event.stopPropagation()}>
                       <Button variant="ghost">Lihat</Button>
                     </Link>
                   </TableCell>
