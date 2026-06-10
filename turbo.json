@@ -1,8 +1,10 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {

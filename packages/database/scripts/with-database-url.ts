@@ -7,11 +7,18 @@ import { config } from "dotenv";
 import { ensureDatabaseUrl } from "../src/database-url";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const prismaArgs = process.argv.slice(2);
+const isGenerate = prismaArgs[0] === "generate";
 
 config({ path: resolve(packageRoot, ".env") });
-ensureDatabaseUrl();
 
-const prismaArgs = process.argv.slice(2);
+// `prisma generate` tidak connect ke DB; placeholder cukup untuk build CI.
+if (!process.env.DATABASE_URL?.trim() && isGenerate) {
+  process.env.DATABASE_URL =
+    "postgresql://build:build@127.0.0.1:5432/build?schema=public";
+}
+
+ensureDatabaseUrl();
 
 if (prismaArgs.length === 0) {
   console.error("Usage: tsx scripts/with-database-url.ts <prisma-command> [args...]");
