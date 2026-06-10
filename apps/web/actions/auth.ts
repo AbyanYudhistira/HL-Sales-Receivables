@@ -8,7 +8,7 @@ export async function loginAction(
   _prev: { error?: string } | null,
   formData: FormData
 ): Promise<{ error?: string } | null> {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {

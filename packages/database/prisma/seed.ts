@@ -12,7 +12,7 @@ ensureDatabaseUrl();
 const prisma = createPrismaClient();
 
 async function main() {
-  const email = process.env.ADMIN_EMAIL ?? "admin@hl.local";
+  const email = (process.env.ADMIN_EMAIL ?? "admin@hl.local").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD ?? "admin123";
   const passwordHash = await bcrypt.hash(password, 12);
 
