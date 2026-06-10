@@ -1,79 +1,70 @@
 import { LoginForm } from "@/components/auth/login-form";
+import { LoginMonogram } from "@/components/auth/login-monogram";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]">
-      <section
-        className="relative flex flex-col justify-center overflow-hidden px-8 py-12 text-primary-foreground lg:px-14 lg:py-16"
-        style={{ background: "var(--brand-panel)" }}
+    <div className="grid min-h-screen bg-background lg:grid-cols-[1.05fr_1fr]">
+      <aside
+        className="relative isolate flex min-h-[280px] flex-col overflow-hidden px-8 py-10 text-primary-foreground lg:min-h-screen lg:px-14 lg:py-16"
+        style={{ backgroundColor: "oklch(0.42 0.05 145)" }}
       >
         <div
-          className="pointer-events-none absolute inset-0 opacity-30"
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 opacity-70"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0)",
-            backgroundSize: "20px 20px",
+              "radial-gradient(120% 70% at 10% 0%, oklch(0.55 0.07 145) 0%, transparent 55%), radial-gradient(80% 60% at 100% 100%, oklch(0.35 0.04 145) 0%, transparent 60%)",
           }}
-          aria-hidden
         />
-        <div className="relative z-10 max-w-md">
-          <svg
-            viewBox="0 0 80 80"
-            className="mb-8 size-16"
-            role="img"
-            aria-label="HL"
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 opacity-[0.08]"
+          style={{
+            backgroundImage: "radial-gradient(oklch(1 0 0) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <LoginMonogram />
+          <span className="text-sm tracking-wide text-primary-foreground/90">
+            Buku catatan toko
+          </span>
+        </div>
+
+        <div className="relative z-10 flex flex-1 flex-col justify-center max-w-md py-12 lg:py-0">
+          <h1
+            className="font-display text-[clamp(2.25rem,5vw,3.5rem)] font-medium leading-[1.05] text-primary-foreground"
+            style={{ letterSpacing: "-0.025em" }}
           >
-            <rect width="80" height="80" rx="16" fill="rgba(255,255,255,0.12)" />
-            <text
-              x="50%"
-              y="54%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="currentColor"
-              fontSize="34"
-              fontFamily="Georgia, serif"
-              fontStyle="italic"
-              fontWeight="600"
-            >
-              HL
-            </text>
-          </svg>
-          <h1 className="font-display text-[clamp(2rem,4vw,2.75rem)] font-semibold leading-tight text-primary-foreground">
             Catatan toko,{" "}
-            <span className="italic">tanpa pusing.</span>
+            <em className="font-display font-medium italic">tanpa pusing</em>.
           </h1>
-          <p className="mt-4 max-w-sm text-lg leading-relaxed text-primary-foreground/90">
-            Tulis bon penjualan dan tagihan pelanggan dengan tenang. Semua tercatat
-            rapi di satu tempat.
+          <p className="mt-5 max-w-sm text-lg leading-relaxed text-primary-foreground/90">
+            Tulis bon, tandai yang sudah bayar, lihat siapa yang masih ngutang.
           </p>
         </div>
-      </section>
+      </aside>
 
-      <section className="flex items-center justify-center bg-background px-6 py-10 lg:px-12">
-        <div className="w-full max-w-md">
+      <main className="flex items-center justify-center px-6 py-12 lg:px-16">
+        <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-primary font-display text-base font-semibold italic text-primary-foreground">
-              HL
+            <LoginMonogram dark />
+            <span className="text-sm tracking-wide text-muted-foreground">
+              Buku catatan toko
             </span>
-            <div>
-              <p className="font-display text-lg font-semibold">Buku Toko</p>
-              <p className="text-sm text-muted-foreground">Masuk ke akun Anda</p>
-            </div>
           </div>
 
-          <div className="hidden lg:block">
-            <span className="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary font-display text-lg font-semibold italic text-primary-foreground">
-              HL
-            </span>
-            <h2 className="font-display text-3xl font-semibold text-foreground">Masuk</h2>
-            <p className="mt-2 text-base text-muted-foreground">
-              Masuk untuk mulai mencatat.
-            </p>
-          </div>
+          <h2 className="font-display text-3xl font-medium text-foreground lg:text-4xl">
+            Selamat datang kembali
+          </h2>
+          <p className="mt-2 text-base text-foreground/70">
+            Masuk untuk mulai mencatat.
+          </p>
 
           <LoginForm />
         </div>
-      </section>
+      </main>
     </div>
   );
 }

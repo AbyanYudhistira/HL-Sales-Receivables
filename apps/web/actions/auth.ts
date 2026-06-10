@@ -12,7 +12,7 @@ export async function loginAction(
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
-    return { error: "Username atau kata sandi salah." };
+    return { error: "Nama pengguna atau kata sandi salah. Coba lagi ya." };
   }
 
   const result = await signIn("credentials", {
@@ -22,7 +22,7 @@ export async function loginAction(
   });
 
   if (result?.error) {
-    return { error: "Username atau kata sandi salah." };
+    return { error: "Nama pengguna atau kata sandi salah. Coba lagi ya." };
   }
 
   redirect("/");

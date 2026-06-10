@@ -4,6 +4,7 @@ import { Fraunces, Inter } from "next/font/google";
 import { AppToaster } from "@/components/ui/sonner";
 
 import "./globals.css";
+
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
@@ -18,8 +19,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "HL App — Buku Toko",
-  description: "Catatan penjualan, pelanggan, dan tagihan toko HL",
+  title: "Buku Toko",
+  description: "Catatan penjualan, pelanggan, dan tagihan toko",
 };
 
 export default function RootLayout({
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body>
         {children}
         <AppToaster />
-      </body>    </html>
+      </body>
+    </html>
   );
 }

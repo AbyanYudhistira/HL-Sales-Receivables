@@ -67,25 +67,14 @@ function NavLinks({
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
-    <div className={cn("flex items-center gap-3", compact && "gap-2")}>
-      <span
-        className={cn(
-          "flex shrink-0 items-center justify-center rounded-xl bg-primary font-display text-lg font-semibold italic text-primary-foreground",
-          compact ? "size-10" : "size-11"
-        )}
-        aria-hidden
-      >
-        HL
-      </span>
-      {!compact && (
-        <div>
-          <p className="font-display text-lg font-semibold leading-tight text-foreground">
-            Buku Toko
-          </p>
-          <p className="text-sm text-muted-foreground">Catatan penjualan HL</p>
-        </div>
+    <p
+      className={cn(
+        "font-medium leading-tight tracking-wide text-foreground",
+        compact ? "text-sm" : "text-sm"
       )}
-    </div>
+    >
+      Buku Toko
+    </p>
   );
 }
 
