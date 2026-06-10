@@ -30,30 +30,22 @@ CREATE DATABASE hl_sales;
 
 ### 2. Environment
 
-Salin dan sesuaikan kredensial Postgres Anda (cukup variabel `POSTGRES_*`, **tanpa** `DATABASE_URL` manual):
+Salin `.env.example` ke `.env` / `.env.local` dan sesuaikan `DATABASE_URL`:
 
 ```bash
 # packages/database/.env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password_anda
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=hl_sales
+DATABASE_URL=postgresql://postgres:password_anda@localhost:5432/hl_sales?schema=public
 ADMIN_EMAIL=admin@hl.local
 ADMIN_PASSWORD=admin123
 
 # apps/web/.env.local
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password_anda
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=hl_sales
+DATABASE_URL=postgresql://postgres:password_anda@localhost:5432/hl_sales?schema=public
 AUTH_SECRET=generate-random-32-character-secret
 ADMIN_EMAIL=admin@hl.local
 ADMIN_PASSWORD=admin123
 ```
 
-`DATABASE_URL` dibuat otomatis dari variabel di atas.
+Untuk Neon/Vercel, gunakan connection string dari dashboard (wajib sertakan `sslmode=require`).
 
 ### 3. Install & Database
 

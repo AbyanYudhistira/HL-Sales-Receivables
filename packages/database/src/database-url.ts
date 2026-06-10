@@ -1,25 +1,11 @@
-export function buildDatabaseUrl(): string {
-  const user = process.env.POSTGRES_USER ?? "postgres";
-  const password = process.env.POSTGRES_PASSWORD;
-  const host = process.env.POSTGRES_HOST ?? "localhost";
-  const port = process.env.POSTGRES_PORT ?? "5432";
-  const database = process.env.POSTGRES_DB ?? "hl_sales";
+export function ensureDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL?.trim();
 
-  if (!password) {
+  if (!databaseUrl) {
     throw new Error(
-      "POSTGRES_PASSWORD wajib diisi di .env (atau set DATABASE_URL manual)."
+      "DATABASE_URL wajib diisi di .env (contoh: postgresql://user:pass@localhost:5432/hl_sales?schema=public)."
     );
   }
 
-  const encodedPassword = encodeURIComponent(password);
-
-  return `postgresql://${user}:${encodedPassword}@${host}:${port}/${database}?schema=public`;
-}
-
-export function ensureDatabaseUrl(): string {
-  if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL = buildDatabaseUrl();
-  }
-
-  return process.env.DATABASE_URL;
+  return databaseUrl;
 }
