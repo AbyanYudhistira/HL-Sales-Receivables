@@ -16,17 +16,28 @@ export async function listCustomers(search?: string) {
 
 export async function getCustomersWithSummaries() {
   const customers = await listCustomers();
-  const transactions = await prisma.transaction.findMany({
-    include: { lines: true },
-  });
+  const [transactions, bonusMap] = await Promise.all([
+    prisma.transaction.findMany({
+      select: {
+        customerId: true,
+        status: true,
+        ongkir: true,
+        lines: {
+          select: {
+            discountedUnitPrice: true,
+            quantity: true,
+            isBonusLine: true,
+          },
+        },
+      },
+    }),
+    transactionService.getBonusAvailableMap(customers),
+  ]);
 
-  const summaries = new Map<
-    string,
-    { unpaid: number; paid: number; bonusAvailable: number }
-  >();
+  const summaries = new Map<string, { unpaid: number; paid: number }>();
 
   for (const customer of customers) {
-    summaries.set(customer.id, { unpaid: 0, paid: 0, bonusAvailable: 0 });
+    summaries.set(customer.id, { unpaid: 0, paid: 0 });
   }
 
   for (const tx of transactions) {
@@ -49,18 +60,15 @@ export async function getCustomersWithSummaries() {
     }
   }
 
-  return Promise.all(
-    customers.map(async (customer) => {
-      const summary = summaries.get(customer.id)!;
-      const bonusInfo = await transactionService.getCustomerBonusInfo(customer.id);
-      return {
-        ...customer,
-        totalUnpaid: summary.unpaid,
-        totalPaid: summary.paid,
-        bonusAvailable: bonusInfo.available,
-      };
-    })
-  );
+  return customers.map((customer) => {
+    const summary = summaries.get(customer.id)!;
+    return {
+      ...customer,
+      totalUnpaid: summary.unpaid,
+      totalPaid: summary.paid,
+      bonusAvailable: bonusMap.get(customer.id) ?? 0,
+    };
+  });
 }
 
 export async function getCustomerById(id: string) {

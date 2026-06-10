@@ -20,16 +20,17 @@ export default async function TransactionsPage({
   const status = query.status ?? "all";
   const customerId = query.customerId ?? "";
 
-  const transactions = await transactionService.listTransactions({
-    year,
-    month,
-    ...(status === "LUNAS" || status === "PIUTANG"
-      ? { status: status as "LUNAS" | "PIUTANG" }
-      : {}),
-    ...(customerId ? { customerId } : {}),
-  });
-
-  const customers = await customerService.listCustomers();
+  const [transactions, customers] = await Promise.all([
+    transactionService.listTransactions({
+      year,
+      month,
+      ...(status === "LUNAS" || status === "PIUTANG"
+        ? { status: status as "LUNAS" | "PIUTANG" }
+        : {}),
+      ...(customerId ? { customerId } : {}),
+    }),
+    customerService.listCustomers(),
+  ]);
 
   return (
     <TransactionsPageClient

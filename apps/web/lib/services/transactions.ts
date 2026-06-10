@@ -33,8 +33,14 @@ export async function listTransactions(filters?: {
       ...(dateFilter ? { tanggal: dateFilter } : {}),
     },
     include: {
-      customer: true,
-      lines: { include: { product: true } },
+      customer: { select: { nama: true } },
+      lines: {
+        select: {
+          discountedUnitPrice: true,
+          quantity: true,
+          isBonusLine: true,
+        },
+      },
     },
     orderBy: { tanggal: "desc" },
   });
@@ -251,6 +257,77 @@ export async function deleteTransaction(id: string) {
   return prisma.transaction.delete({ where: { id } });
 }
 
+type BonusLineRow = {
+  discountedUnitPrice: unknown;
+  quantity: number;
+  isBonusLine: boolean;
+};
+
+function sumLineOmzet(lines: BonusLineRow[]) {
+  return lines.reduce(
+    (sum, line) =>
+      line.isBonusLine
+        ? sum
+        : sum + Number(line.discountedUnitPrice) * line.quantity,
+    0
+  );
+}
+
+export async function getBonusAvailableMap(
+  customers: { id: string; bonusThreshold: unknown }[]
+) {
+  const [paidTransactions, grantRows] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { status: "LUNAS", isBonus: false },
+      select: {
+        customerId: true,
+        lines: {
+          select: {
+            discountedUnitPrice: true,
+            quantity: true,
+            isBonusLine: true,
+          },
+        },
+      },
+    }),
+    prisma.bonusGrant.groupBy({
+      by: ["customerId"],
+      _sum: { bonusCount: true },
+    }),
+  ]);
+
+  const paidOmzetByCustomer = new Map<string, number>();
+  for (const tx of paidTransactions) {
+    const omzet = sumLineOmzet(tx.lines);
+    paidOmzetByCustomer.set(
+      tx.customerId,
+      (paidOmzetByCustomer.get(tx.customerId) ?? 0) + omzet
+    );
+  }
+
+  const grantedByCustomer = new Map(
+    grantRows.map((row) => [row.customerId, row._sum.bonusCount ?? 0])
+  );
+
+  const result = new Map<string, number>();
+  for (const customer of customers) {
+    const threshold = Number(customer.bonusThreshold);
+    if (threshold <= 0) {
+      result.set(customer.id, 0);
+      continue;
+    }
+
+    const paidOmzet = paidOmzetByCustomer.get(customer.id) ?? 0;
+    const granted = grantedByCustomer.get(customer.id) ?? 0;
+    result.set(
+      customer.id,
+      computeBonusAvailable(paidOmzet, threshold, granted)
+    );
+  }
+
+  return result;
+}
+
 export async function getCustomerPaidOmzet(customerId: string) {
   const transactions = await prisma.transaction.findMany({
     where: { customerId, status: "LUNAS", isBonus: false },
@@ -278,11 +355,12 @@ export async function getCustomerBonusGrantedCount(customerId: string) {
 }
 
 export async function getCustomerBonusInfo(customerId: string) {
-  const customer = await prisma.customer.findUniqueOrThrow({
-    where: { id: customerId },
-  });
-  const paidOmzet = await getCustomerPaidOmzet(customerId);
-  const granted = await getCustomerBonusGrantedCount(customerId);
+  const [customer, paidOmzet, granted] = await Promise.all([
+    prisma.customer.findUniqueOrThrow({ where: { id: customerId } }),
+    getCustomerPaidOmzet(customerId),
+    getCustomerBonusGrantedCount(customerId),
+  ]);
+
   const available = computeBonusAvailable(
     paidOmzet,
     Number(customer.bonusThreshold),

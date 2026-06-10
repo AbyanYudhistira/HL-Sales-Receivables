@@ -12,24 +12,24 @@ export default async function EditTransactionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const tx = await transactionService.getTransactionById(id);
+  const customersPromise = customerService.listCustomers();
+
+  const [tx, customers, products, bonusMap] = await Promise.all([
+    transactionService.getTransactionById(id),
+    customersPromise,
+    productService.listProducts(),
+    customersPromise.then((rows) => transactionService.getBonusAvailableMap(rows)),
+  ]);
+
   if (!tx) notFound();
 
-  const customers = await customerService.listCustomers();
-  const products = await productService.listProducts();
-
-  const customersWithBonus = await Promise.all(
-    customers.map(async (customer) => {
-      const bonus = await transactionService.getCustomerBonusInfo(customer.id);
-      return {
-        id: customer.id,
-        nama: customer.nama,
-        discountLm: customer.discountLm,
-        discountBr: customer.discountBr,
-        bonusAvailable: bonus.available,
-      };
-    })
-  );
+  const customersWithBonus = customers.map((customer) => ({
+    id: customer.id,
+    nama: customer.nama,
+    discountLm: customer.discountLm,
+    discountBr: customer.discountBr,
+    bonusAvailable: bonusMap.get(customer.id) ?? 0,
+  }));
 
   async function action(formData: FormData) {
     "use server";

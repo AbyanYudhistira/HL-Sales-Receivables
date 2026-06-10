@@ -14,19 +14,19 @@ export default async function CustomerDetailPage({
   const { id } = await params;
   const query = await searchParams;
 
-  const customer = await customerService.getCustomerById(id);
-  if (!customer) notFound();
-
   const now = new Date();
   const year = Number(query.year ?? now.getFullYear());
   const month = Number(query.month ?? now.getMonth() + 1);
 
-  const { transactions, totals } = await customerService.getCustomerMonthlySummary(
-    id,
-    year,
-    month
-  );
-  const bonusInfo = await transactionService.getCustomerBonusInfo(id);
+  const [customer, monthlySummary, bonusInfo] = await Promise.all([
+    customerService.getCustomerById(id),
+    customerService.getCustomerMonthlySummary(id, year, month),
+    transactionService.getCustomerBonusInfo(id),
+  ]);
+
+  if (!customer) notFound();
+
+  const { transactions, totals } = monthlySummary;
 
   return (
     <CustomerDetailClient
