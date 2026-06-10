@@ -60,7 +60,7 @@ export default async function BerandaPage() {
     <div className="space-y-12">
       <header>
         <h1 className="font-display text-[clamp(2rem,4vw,2.5rem)] font-semibold text-foreground">
-          Selamat datang 👋
+          Selamat datang
         </h1>
         <p className="mt-2 text-base text-muted-foreground">{formatDateLong(now)}</p>
       </header>

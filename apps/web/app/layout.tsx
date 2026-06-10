@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { AppToaster } from "@/components/ui/sonner";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body>
         {children}
         <AppToaster />
+        <SpeedInsights />
       </body>
     </html>
   );
