@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { revalidateSalesData } from "@/lib/cache-tags";
 import * as settlementService from "@/lib/services/settlement";
 
 async function requireAuth() {
@@ -20,7 +21,10 @@ export async function settleTransactionAction(
   const date = z.coerce.date().parse(tanggalPelunasan);
   await settlementService.settleTransaction(transactionId, date);
 
+  revalidateSalesData();
   revalidatePath("/transactions");
+  revalidatePath("/customers");
+  revalidatePath("/laporan");
   revalidatePath(`/transactions/${transactionId}`);
   revalidatePath("/");
 }
@@ -41,7 +45,10 @@ export async function settleMonthAction(
     date
   );
 
+  revalidateSalesData();
   revalidatePath(`/customers/${customerId}`);
+  revalidatePath("/customers");
+  revalidatePath("/laporan");
   revalidatePath("/");
   revalidatePath("/transactions");
 

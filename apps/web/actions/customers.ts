@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { revalidateSalesData } from "@/lib/cache-tags";
 import { getReturnTo } from "@/lib/safe-return-path";
 import * as customerService from "@/lib/services/customers";
 
@@ -32,6 +33,7 @@ export async function createCustomerAction(formData: FormData) {
   });
 
   const customer = await customerService.createCustomer(parsed);
+  revalidateSalesData();
   revalidatePath("/customers");
 
   if (formData.get("modal") === "true") {
@@ -52,6 +54,7 @@ export async function saveCustomerAction(formData: FormData) {
   });
 
   const customer = await customerService.createCustomer(parsed);
+  revalidateSalesData();
   revalidatePath("/customers");
   return { success: true as const, id: customer.id };
 }
@@ -67,8 +70,10 @@ export async function updateCustomerAction(id: string, formData: FormData) {
   });
 
   await customerService.updateCustomer(id, parsed);
+  revalidateSalesData();
   revalidatePath("/customers");
   revalidatePath(`/customers/${id}`);
+  revalidatePath("/");
 
   if (formData.get("modal") === "true") {
     return { success: true as const };
@@ -80,5 +85,7 @@ export async function updateCustomerAction(id: string, formData: FormData) {
 export async function deleteCustomerAction(id: string) {
   await requireAuth();
   await customerService.softDeleteCustomer(id);
+  revalidateSalesData();
   revalidatePath("/customers");
+  revalidatePath("/");
 }

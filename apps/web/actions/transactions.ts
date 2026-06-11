@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { revalidateSalesData } from "@/lib/cache-tags";
 import * as transactionService from "@/lib/services/transactions";
 
 const lineSchema = z.object({
@@ -54,7 +55,10 @@ export async function createTransactionAction(formData: FormData) {
       ...parsed,
       tanggal: new Date(parsed.tanggal),
     });
+    revalidateSalesData();
     revalidatePath("/transactions");
+    revalidatePath("/customers");
+    revalidatePath("/laporan");
     revalidatePath("/");
     return { success: true as const, id: created.id };
   } catch (error) {
@@ -74,8 +78,12 @@ export async function updateTransactionAction(id: string, formData: FormData) {
       ...parsed,
       tanggal: new Date(parsed.tanggal),
     });
+    revalidateSalesData();
     revalidatePath("/transactions");
+    revalidatePath("/customers");
+    revalidatePath("/laporan");
     revalidatePath(`/transactions/${id}`);
+    revalidatePath("/");
     return { success: true as const, id };
   } catch (error) {
     return {
@@ -88,6 +96,9 @@ export async function updateTransactionAction(id: string, formData: FormData) {
 export async function deleteTransactionAction(id: string) {
   await requireAuth();
   await transactionService.deleteTransaction(id);
+  revalidateSalesData();
   revalidatePath("/transactions");
+  revalidatePath("/customers");
+  revalidatePath("/laporan");
   revalidatePath("/");
 }

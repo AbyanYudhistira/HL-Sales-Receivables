@@ -11,6 +11,11 @@ import {
 
 import { parseDiscountSteps } from "@/lib/format-idr";
 
+import {
+  getCustomerPaidOmzet as getCustomerPaidOmzetFromDb,
+  getPaidOmzetByCustomerMap,
+} from "./aggregations";
+
 export interface TransactionLineInput {
   productId: string;
   quantity: number;
@@ -352,53 +357,16 @@ export async function deleteTransaction(id: string) {
   return prisma.transaction.delete({ where: { id } });
 }
 
-type BonusLineRow = {
-  discountedUnitPrice: unknown;
-  quantity: number;
-  isBonusLine: boolean;
-};
-
-function sumLineOmzet(lines: BonusLineRow[]) {
-  return lines.reduce(
-    (sum, line) =>
-      line.isBonusLine
-        ? sum
-        : sum + Number(line.discountedUnitPrice) * line.quantity,
-    0
-  );
-}
-
 export async function getBonusAvailableMap(
   customers: { id: string; bonusThreshold: unknown }[]
 ) {
-  const [paidTransactions, grantRows] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { status: "LUNAS", isBonus: false },
-      select: {
-        customerId: true,
-        lines: {
-          select: {
-            discountedUnitPrice: true,
-            quantity: true,
-            isBonusLine: true,
-          },
-        },
-      },
-    }),
+  const [paidOmzetByCustomer, grantRows] = await Promise.all([
+    getPaidOmzetByCustomerMap(),
     prisma.bonusGrant.groupBy({
       by: ["customerId"],
       _sum: { bonusCount: true },
     }),
   ]);
-
-  const paidOmzetByCustomer = new Map<string, number>();
-  for (const tx of paidTransactions) {
-    const omzet = sumLineOmzet(tx.lines);
-    paidOmzetByCustomer.set(
-      tx.customerId,
-      (paidOmzetByCustomer.get(tx.customerId) ?? 0) + omzet
-    );
-  }
 
   const grantedByCustomer = new Map(
     grantRows.map((row) => [row.customerId, row._sum.bonusCount ?? 0])
@@ -424,21 +392,7 @@ export async function getBonusAvailableMap(
 }
 
 export async function getCustomerPaidOmzet(customerId: string) {
-  const transactions = await prisma.transaction.findMany({
-    where: { customerId, status: "LUNAS", isBonus: false },
-    include: { lines: true },
-  });
-
-  return transactions.reduce((sum, tx) => {
-    const omzet = tx.lines.reduce(
-      (lineSum, line) =>
-        line.isBonusLine
-          ? lineSum
-          : lineSum + Number(line.discountedUnitPrice) * line.quantity,
-      0
-    );
-    return sum + omzet;
-  }, 0);
+  return getCustomerPaidOmzetFromDb(customerId);
 }
 
 export async function getCustomerBonusGrantedCount(customerId: string) {

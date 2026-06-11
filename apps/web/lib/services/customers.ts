@@ -1,4 +1,7 @@
 import { prisma } from "@hl/database";
+import { unstable_cache } from "next/cache";
+
+import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
 
 import * as transactionService from "@/lib/services/transactions";
 
@@ -22,7 +25,7 @@ export async function listCustomers(search?: string) {
   });
 }
 
-export async function getCustomersWithSummaries() {
+async function fetchCustomersWithSummaries() {
   const customers = await prisma.customer.findMany({
     where: { deletedAt: null },
     select: { id: true, nama: true, bonusThreshold: true },
@@ -101,6 +104,19 @@ export async function getCustomersWithSummaries() {
       bonusAvailable: bonusMap.get(customer.id) ?? 0,
     };
   });
+}
+
+const getCachedCustomersWithSummaries = unstable_cache(
+  fetchCustomersWithSummaries,
+  ["customers-with-summaries"],
+  {
+    revalidate: CACHE_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.customersSummary],
+  }
+);
+
+export async function getCustomersWithSummaries() {
+  return getCachedCustomersWithSummaries();
 }
 
 export async function getCustomerById(id: string) {

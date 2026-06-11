@@ -1,4 +1,7 @@
 import { prisma } from "@hl/database";
+import { unstable_cache } from "next/cache";
+
+import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
 
 export type ReportSummary = {
   totals: {
@@ -19,7 +22,7 @@ export type ReportSummary = {
   byType: { tipe: string; omzet: number; laba: number }[];
 };
 
-export async function getReportSummary(
+async function fetchReportSummary(
   year: number,
   month: number
 ): Promise<ReportSummary> {
@@ -176,4 +179,20 @@ export async function getReportSummary(
       { tipe: "BR", omzet: omzetBr, laba: labaBr },
     ],
   };
+}
+
+const getCachedReportSummary = unstable_cache(
+  fetchReportSummary,
+  ["report-summary"],
+  {
+    revalidate: CACHE_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.reports],
+  }
+);
+
+export async function getReportSummary(
+  year: number,
+  month: number
+): Promise<ReportSummary> {
+  return getCachedReportSummary(year, month);
 }

@@ -1,25 +1,14 @@
 import { computeBonusAvailable } from "@hl/calculations";
 import { prisma } from "@hl/database";
+import { unstable_cache } from "next/cache";
 
-type LineRow = {
-  discountedUnitPrice: unknown;
-  quantity: number;
-  isBonusLine: boolean;
-};
+import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
 
-function sumLineOmzet(lines: LineRow[]) {
-  return lines.reduce(
-    (sum, line) =>
-      line.isBonusLine
-        ? sum
-        : sum + Number(line.discountedUnitPrice) * line.quantity,
-    0
-  );
-}
-
-function sumOwed(tx: { lines: LineRow[]; ongkir: unknown }) {
-  return sumLineOmzet(tx.lines) + Number(tx.ongkir);
-}
+import {
+  getPaidOmzetByCustomerMap,
+  sumLunasFromDate,
+  sumPiutangForDateRange,
+} from "./aggregations";
 
 export type DashboardSummary = {
   belumBayarHariIni: number;
@@ -46,7 +35,7 @@ async function fetchRecentTransactions() {
   });
 }
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
+async function fetchDashboardSummary(): Promise<DashboardSummary> {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -54,91 +43,26 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   todayEnd.setDate(todayEnd.getDate() + 1);
 
   const [
-    unpaidToday,
-    paidThisMonth,
+    belumBayarHariIni,
+    { totalPaid: sudahBayarBulanIni, omzet: omzetBulanIni },
     recentTransactions,
     customers,
-    paidTransactions,
+    paidOmzetByCustomer,
     grantRows,
   ] = await Promise.all([
-    prisma.transaction.findMany({
-      where: {
-        status: "PIUTANG",
-        tanggal: { gte: todayStart, lt: todayEnd },
-      },
-      select: {
-        ongkir: true,
-        lines: {
-          select: {
-            discountedUnitPrice: true,
-            quantity: true,
-            isBonusLine: true,
-          },
-        },
-      },
-    }),
-    prisma.transaction.findMany({
-      where: {
-        status: "LUNAS",
-        isBonus: false,
-        tanggal: { gte: monthStart },
-      },
-      select: {
-        ongkir: true,
-        lines: {
-          select: {
-            discountedUnitPrice: true,
-            quantity: true,
-            isBonusLine: true,
-          },
-        },
-      },
-    }),
+    sumPiutangForDateRange(todayStart, todayEnd),
+    sumLunasFromDate(monthStart),
     fetchRecentTransactions(),
     prisma.customer.findMany({
       where: { deletedAt: null },
       select: { id: true, bonusThreshold: true },
     }),
-    prisma.transaction.findMany({
-      where: { status: "LUNAS", isBonus: false },
-      select: {
-        customerId: true,
-        lines: {
-          select: {
-            discountedUnitPrice: true,
-            quantity: true,
-            isBonusLine: true,
-          },
-        },
-      },
-    }),
+    getPaidOmzetByCustomerMap(),
     prisma.bonusGrant.groupBy({
       by: ["customerId"],
       _sum: { bonusCount: true },
     }),
   ]);
-
-  let belumBayarHariIni = 0;
-  for (const tx of unpaidToday) {
-    belumBayarHariIni += sumOwed(tx);
-  }
-
-  let sudahBayarBulanIni = 0;
-  let omzetBulanIni = 0;
-  for (const tx of paidThisMonth) {
-    const lineOmzet = sumLineOmzet(tx.lines);
-    sudahBayarBulanIni += lineOmzet + Number(tx.ongkir);
-    omzetBulanIni += lineOmzet;
-  }
-
-  const paidOmzetByCustomer = new Map<string, number>();
-  for (const tx of paidTransactions) {
-    const omzet = sumLineOmzet(tx.lines);
-    paidOmzetByCustomer.set(
-      tx.customerId,
-      (paidOmzetByCustomer.get(tx.customerId) ?? 0) + omzet
-    );
-  }
 
   const grantedByCustomer = new Map(
     grantRows.map((row) => [row.customerId, row._sum.bonusCount ?? 0])
@@ -165,4 +89,17 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     pelangganHadiah,
     recentTransactions,
   };
+}
+
+const getCachedDashboardSummary = unstable_cache(
+  fetchDashboardSummary,
+  ["dashboard-summary"],
+  {
+    revalidate: CACHE_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.dashboard],
+  }
+);
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  return getCachedDashboardSummary();
 }
