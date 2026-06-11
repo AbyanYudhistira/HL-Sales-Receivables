@@ -24,6 +24,8 @@ import {
   INDONESIAN_MONTHS,
 } from "@/lib/format-idr";
 
+const PAGE_SIZE = 20;
+
 type TransactionRow = {
   id: string;
   nomorBon: string;
@@ -37,8 +39,6 @@ type TransactionRow = {
 
 type CustomerOption = { id: string; nama: string };
 
-const PAGE_SIZE = 20;
-
 export function TransactionsPageClient({
   transactions,
   customers,
@@ -46,6 +46,8 @@ export function TransactionsPageClient({
   initialYear,
   initialStatus,
   initialCustomerId,
+  initialPage,
+  totalCount,
 }: {
   transactions: TransactionRow[];
   customers: CustomerOption[];
@@ -53,6 +55,8 @@ export function TransactionsPageClient({
   initialYear: number;
   initialStatus: string;
   initialCustomerId: string;
+  initialPage: number;
+  totalCount: number;
 }) {
   const router = useRouter();
   const [month, setMonth] = useState(initialMonth);
@@ -62,13 +66,11 @@ export function TransactionsPageClient({
     if (!initialCustomerId) return "";
     return customers.find((customer) => customer.id === initialCustomerId)?.nama ?? "";
   });
-  const [page, setPage] = useState(1);
 
-  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
-  const paged = transactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const showPagination = transactions.length > PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const showPagination = totalCount > PAGE_SIZE;
 
-  function applyFilters() {
+  function buildParams(page: number) {
     const params = new URLSearchParams();
     params.set("month", String(month));
     params.set("year", String(year));
@@ -81,8 +83,17 @@ export function TransactionsPageClient({
       );
       if (match) params.set("customerId", match.id);
     }
-    setPage(1);
-    router.push(`/transactions?${params.toString()}`);
+
+    if (page > 1) params.set("page", String(page));
+    return params;
+  }
+
+  function navigate(page: number) {
+    router.push(`/transactions?${buildParams(page).toString()}`);
+  }
+
+  function applyFilters() {
+    navigate(1);
   }
 
   return (
@@ -159,7 +170,7 @@ export function TransactionsPageClient({
         </Button>
       </Card>
 
-      {transactions.length === 0 ? (
+      {totalCount === 0 ? (
         <Card className="py-12 text-center">
           <p className="text-base text-muted-foreground">
             Belum ada penjualan untuk filter ini.
@@ -179,7 +190,7 @@ export function TransactionsPageClient({
               </TableRow>
             </TableHead>
             <TableBody>
-              {paged.map((tx) => (
+              {transactions.map((tx) => (
                 <TableRow
                   key={tx.id}
                   role="button"
@@ -220,20 +231,20 @@ export function TransactionsPageClient({
       {showPagination && (
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-base text-muted-foreground">
-            Halaman {page} dari {totalPages} ({transactions.length} bon)
+            Halaman {initialPage} dari {totalPages} ({totalCount} bon)
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              disabled={page <= 1}
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={initialPage <= 1}
+              onClick={() => navigate(initialPage - 1)}
             >
               Sebelumnya
             </Button>
             <Button
               variant="outline"
-              disabled={page >= totalPages}
-              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={initialPage >= totalPages}
+              onClick={() => navigate(initialPage + 1)}
             >
               Selanjutnya
             </Button>

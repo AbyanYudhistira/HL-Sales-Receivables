@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { revalidateProductData } from "@/lib/cache-tags";
 import { getReturnTo } from "@/lib/safe-return-path";
 import * as productService from "@/lib/services/products";
 
@@ -31,6 +32,7 @@ export async function createProductAction(formData: FormData) {
   });
 
   const product = await productService.createProduct(parsed);
+  revalidateProductData();
   revalidatePath("/products");
 
   if (formData.get("modal") === "true") {
@@ -51,6 +53,7 @@ export async function saveProductAction(formData: FormData) {
   });
 
   const product = await productService.createProduct(parsed);
+  revalidateProductData();
   revalidatePath("/products");
   return { success: true as const, id: product.id };
 }
@@ -66,6 +69,7 @@ export async function updateProductAction(id: string, formData: FormData) {
   });
 
   await productService.updateProduct(id, parsed);
+  revalidateProductData();
   revalidatePath("/products");
 
   if (formData.get("modal") === "true") {
@@ -78,5 +82,6 @@ export async function updateProductAction(id: string, formData: FormData) {
 export async function deleteProductAction(id: string) {
   await requireAuth();
   await productService.softDeleteProduct(id);
+  revalidateProductData();
   revalidatePath("/products");
 }

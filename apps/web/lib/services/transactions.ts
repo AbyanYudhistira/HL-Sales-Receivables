@@ -8,7 +8,9 @@ import {
   type ProductType,
   type TransactionStatus,
 } from "@hl/database";
+import { unstable_cache } from "next/cache";
 
+import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
 import { parseDiscountSteps } from "@/lib/format-idr";
 
 import {
@@ -56,6 +58,8 @@ export async function listTransactions(filters?: {
   });
 }
 
+export const TRANSACTIONS_PAGE_SIZE = 20;
+
 export type TransactionTableRow = {
   id: string;
   nomorBon: string;
@@ -67,12 +71,21 @@ export type TransactionTableRow = {
   isBonus: boolean;
 };
 
-export async function listTransactionsForTable(filters: {
+export type TransactionTableResult = {
+  rows: TransactionTableRow[];
+  totalCount: number;
+};
+
+type TransactionTableFilters = {
   year: number;
   month: number;
   customerId?: string;
   status?: TransactionStatus;
-}): Promise<TransactionTableRow[]> {
+  page?: number;
+  pageSize?: number;
+};
+
+function buildTransactionTableFilters(filters: TransactionTableFilters) {
   const start = new Date(filters.year, filters.month - 1, 1);
   const end = new Date(filters.year, filters.month, 0, 23, 59, 59);
 
@@ -84,7 +97,28 @@ export async function listTransactionsForTable(filters: {
     ? Prisma.sql`AND t.status = ${filters.status}::"TransactionStatus"`
     : Prisma.empty;
 
-  const rows = await prisma.$queryRaw<
+  return { start, end, customerFilter, statusFilter };
+}
+
+async function fetchTransactionsForTable(
+  filters: TransactionTableFilters
+): Promise<TransactionTableResult> {
+  const { start, end, customerFilter, statusFilter } =
+    buildTransactionTableFilters(filters);
+  const page = filters.page;
+  const pageSize = filters.pageSize ?? TRANSACTIONS_PAGE_SIZE;
+  const paginate = page !== undefined;
+
+  const [countRows, rows] = await Promise.all([
+    prisma.$queryRaw<{ count: number }[]>`
+      SELECT COUNT(*)::int AS count
+      FROM "Transaction" t
+      WHERE t.tanggal >= ${start}::date
+        AND t.tanggal <= ${end}::date
+        ${customerFilter}
+        ${statusFilter}
+    `,
+    prisma.$queryRaw<
     {
       id: string;
       nomorBon: string;
@@ -132,9 +166,11 @@ export async function listTransactionsForTable(filters: {
       t.status,
       t."isBonus"
     ORDER BY t.tanggal DESC
-  `;
+    ${paginate ? Prisma.sql`LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}` : Prisma.empty}
+  `,
+  ]);
 
-  return rows.map((row) => ({
+  const mappedRows = rows.map((row) => ({
     id: row.id,
     nomorBon: row.nomorBon,
     customerId: row.customerId,
@@ -144,6 +180,26 @@ export async function listTransactionsForTable(filters: {
     status: row.status,
     isBonus: row.isBonus,
   }));
+
+  return {
+    rows: mappedRows,
+    totalCount: Number(countRows[0]?.count ?? 0),
+  };
+}
+
+const getCachedTransactionsForTable = unstable_cache(
+  fetchTransactionsForTable,
+  ["transactions-for-table"],
+  {
+    revalidate: CACHE_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.transactionsList],
+  }
+);
+
+export async function listTransactionsForTable(
+  filters: TransactionTableFilters
+): Promise<TransactionTableResult> {
+  return getCachedTransactionsForTable(filters);
 }
 
 export async function getTransactionById(id: string) {
@@ -357,9 +413,9 @@ export async function deleteTransaction(id: string) {
   return prisma.transaction.delete({ where: { id } });
 }
 
-export async function getBonusAvailableMap(
+async function buildBonusAvailableMap(
   customers: { id: string; bonusThreshold: unknown }[]
-) {
+): Promise<Map<string, number>> {
   const [paidOmzetByCustomer, grantRows] = await Promise.all([
     getPaidOmzetByCustomerMap(),
     prisma.bonusGrant.groupBy({
@@ -386,6 +442,49 @@ export async function getBonusAvailableMap(
       customer.id,
       computeBonusAvailable(paidOmzet, threshold, granted)
     );
+  }
+
+  return result;
+}
+
+async function fetchAllBonusAvailableMap(): Promise<Record<string, number>> {
+  const customers = await prisma.customer.findMany({
+    where: { deletedAt: null },
+    select: { id: true, bonusThreshold: true },
+  });
+  const map = await buildBonusAvailableMap(customers);
+  return Object.fromEntries(map);
+}
+
+const getCachedAllBonusAvailableMap = unstable_cache(
+  fetchAllBonusAvailableMap,
+  ["bonus-available-map"],
+  {
+    revalidate: CACHE_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.transactionForm, CACHE_TAGS.customersSummary],
+  }
+);
+
+export async function getBonusAvailableMap(
+  customers: { id: string; bonusThreshold: unknown }[]
+) {
+  const cached = await getCachedAllBonusAvailableMap();
+  const result = new Map<string, number>();
+
+  for (const customer of customers) {
+    if (customer.id in cached) {
+      result.set(customer.id, cached[customer.id]);
+      continue;
+    }
+
+    const threshold = Number(customer.bonusThreshold);
+    if (threshold <= 0) {
+      result.set(customer.id, 0);
+      continue;
+    }
+
+    const map = await buildBonusAvailableMap([customer]);
+    result.set(customer.id, map.get(customer.id) ?? 0);
   }
 
   return result;

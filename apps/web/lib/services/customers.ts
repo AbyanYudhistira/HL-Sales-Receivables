@@ -5,7 +5,7 @@ import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
 
 import * as transactionService from "@/lib/services/transactions";
 
-export async function listCustomerOptions() {
+async function fetchCustomerOptions() {
   return prisma.customer.findMany({
     where: { deletedAt: null },
     select: { id: true, nama: true },
@@ -13,16 +13,43 @@ export async function listCustomerOptions() {
   });
 }
 
-export async function listCustomers(search?: string) {
+const getCachedCustomerOptions = unstable_cache(
+  fetchCustomerOptions,
+  ["customer-options"],
+  {
+    revalidate: CACHE_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.transactionsList, CACHE_TAGS.transactionForm],
+  }
+);
+
+export async function listCustomerOptions() {
+  return getCachedCustomerOptions();
+}
+
+async function fetchCustomers() {
   return prisma.customer.findMany({
-    where: {
-      deletedAt: null,
-      ...(search
-        ? { nama: { contains: search, mode: "insensitive" as const } }
-        : {}),
-    },
+    where: { deletedAt: null },
     orderBy: { nama: "asc" },
   });
+}
+
+const getCachedCustomers = unstable_cache(fetchCustomers, ["customers-list"], {
+  revalidate: CACHE_REVALIDATE_SECONDS,
+  tags: [CACHE_TAGS.transactionForm],
+});
+
+export async function listCustomers(search?: string) {
+  if (search) {
+    return prisma.customer.findMany({
+      where: {
+        deletedAt: null,
+        nama: { contains: search, mode: "insensitive" as const },
+      },
+      orderBy: { nama: "asc" },
+    });
+  }
+
+  return getCachedCustomers();
 }
 
 async function fetchCustomersWithSummaries() {
@@ -197,7 +224,7 @@ export async function getCustomerMonthlySummary(
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0, 23, 59, 59);
 
-  const [transactions, totalsRows, typeRows] = await Promise.all([
+  const [transactionResult, totalsRows, typeRows] = await Promise.all([
     transactionService.listTransactionsForTable({
       year,
       month,
@@ -306,7 +333,7 @@ export async function getCustomerMonthlySummary(
   const totalsRow = totalsRows[0];
 
   return {
-    transactions: transactions.map((tx) => ({
+    transactions: transactionResult.rows.map((tx) => ({
       id: tx.id,
       nomorBon: tx.nomorBon,
       tanggal: tx.tanggal,

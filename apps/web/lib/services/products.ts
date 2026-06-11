@@ -1,15 +1,32 @@
 import { prisma, type ProductType } from "@hl/database";
+import { unstable_cache } from "next/cache";
 
-export async function listProducts(search?: string) {
+import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
+
+async function fetchProducts() {
   return prisma.product.findMany({
-    where: {
-      deletedAt: null,
-      ...(search
-        ? { nama: { contains: search, mode: "insensitive" as const } }
-        : {}),
-    },
+    where: { deletedAt: null },
     orderBy: { nama: "asc" },
   });
+}
+
+const getCachedProducts = unstable_cache(fetchProducts, ["products-list"], {
+  revalidate: CACHE_REVALIDATE_SECONDS,
+  tags: [CACHE_TAGS.products, CACHE_TAGS.transactionForm],
+});
+
+export async function listProducts(search?: string) {
+  if (search) {
+    return prisma.product.findMany({
+      where: {
+        deletedAt: null,
+        nama: { contains: search, mode: "insensitive" as const },
+      },
+      orderBy: { nama: "asc" },
+    });
+  }
+
+  return getCachedProducts();
 }
 
 export async function getProductById(id: string) {

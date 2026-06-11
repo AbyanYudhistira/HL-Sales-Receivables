@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 
 import { updateTransactionAction } from "@/actions/transactions";
 import { TransactionForm } from "@/components/transactions/transaction-form";
-import * as customerService from "@/lib/services/customers";
-import * as productService from "@/lib/services/products";
+import { getTransactionFormData } from "@/lib/services/transaction-form-data";
 import * as transactionService from "@/lib/services/transactions";
 
 export default async function EditTransactionPage({
@@ -12,24 +11,13 @@ export default async function EditTransactionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const customersPromise = customerService.listCustomers();
 
-  const [tx, customers, products, bonusMap] = await Promise.all([
+  const [tx, { customers, products }] = await Promise.all([
     transactionService.getTransactionById(id),
-    customersPromise,
-    productService.listProducts(),
-    customersPromise.then((rows) => transactionService.getBonusAvailableMap(rows)),
+    getTransactionFormData(),
   ]);
 
   if (!tx) notFound();
-
-  const customersWithBonus = customers.map((customer) => ({
-    id: customer.id,
-    nama: customer.nama,
-    discountLm: customer.discountLm,
-    discountBr: customer.discountBr,
-    bonusAvailable: bonusMap.get(customer.id) ?? 0,
-  }));
 
   async function action(formData: FormData) {
     "use server";
@@ -46,14 +34,8 @@ export default async function EditTransactionPage({
 
       <TransactionForm
         action={action}
-        customers={customersWithBonus}
-        products={products.map((p) => ({
-          id: p.id,
-          nama: p.nama,
-          tipe: p.tipe,
-          hargaBase: Number(p.hargaBase),
-          hargaModal: Number(p.hargaModal),
-        }))}
+        customers={customers}
+        products={products}
         cancelHref={`/transactions/${id}`}
         successHref={`/transactions/${id}`}
         initial={{
