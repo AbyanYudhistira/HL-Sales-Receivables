@@ -111,25 +111,30 @@ Jangan set `DATABASE_URL` ke scope "All Environments" — preview akan menulis k
 
 ### Setup database preview (sekali)
 
+**Cara yang dipakai:** Neon Vercel Integration (`neon-alizarin-tree`) — `DATABASE_URL` preview di-inject otomatis untuk environment Preview.
+
+Jika perlu setup ulang atau DB manual:
+
 1. Di [Neon Console](https://console.neon.tech), buat branch `preview` dari production.
-2. Jalankan migrasi + seed ke DB preview:
+2. Jalankan migrasi + seed:
 
 ```powershell
 $env:DATABASE_URL = "postgresql://...connection-string-branch-preview...?sslmode=require"
 .\scripts\setup-preview-database.ps1
 ```
 
-3. Pisahkan env var di Vercel:
+3. Pisahkan env var di Vercel (hapus `DATABASE_URL` dari scope Preview dulu jika bentrok):
 
 ```powershell
 .\scripts\vercel-split-database-env.ps1 -PreviewDatabaseUrl $env:DATABASE_URL
 ```
 
-**Opsional — Neon + Vercel integration** (auto branch per preview): terima terms di [Vercel Integrations](https://vercel.com/abyan-yudhistiras-projects/~/integrations/accept-terms/neon), lalu:
+Atau pasang Neon integration hanya untuk Preview:
 
 ```bash
 cd apps/web
-npx vercel integration add neon -e production -e preview -m auth=false --plan free_v3
+npx vercel integration add neon -e preview -m auth=false --plan free_v3
+npx vercel integration resource connect neon-alizarin-tree -e preview --yes
 ```
 
 ### Workflow develop
