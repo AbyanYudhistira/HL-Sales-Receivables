@@ -10,6 +10,7 @@
     "build": "tsx scripts/with-database-url.ts generate",
     "db:generate": "tsx scripts/with-database-url.ts generate",
     "db:migrate": "tsx scripts/with-database-url.ts migrate dev",
+    "db:migrate:deploy": "tsx scripts/with-database-url.ts migrate deploy",
     "db:seed": "tsx scripts/with-database-url.ts db seed",
     "db:studio": "tsx scripts/with-database-url.ts studio"
   },
