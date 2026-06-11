@@ -50,7 +50,7 @@ export default async function TransactionsPage({
         nomorBon: tx.nomorBon,
         customerId: tx.customerId,
         customerName: tx.customerName,
-        tanggal: tx.tanggal.toISOString(),
+        tanggal: tx.tanggal,
         total: tx.total,
         status: tx.status,
         isBonus: tx.isBonus,

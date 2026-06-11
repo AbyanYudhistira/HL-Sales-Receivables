@@ -47,7 +47,7 @@ export default async function CustomerDetailPage({
       transactions={transactions.map((tx) => ({
         id: tx.id,
         nomorBon: tx.nomorBon,
-        tanggal: tx.tanggal.toISOString(),
+        tanggal: tx.tanggal,
         status: tx.status,
         total: tx.total,
         isBonus: tx.isBonus,

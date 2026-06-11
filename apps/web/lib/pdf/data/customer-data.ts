@@ -29,7 +29,7 @@ export async function buildCustomerPdfData(
     totals,
     transactions: transactions.map((tx) => ({
       nomorBon: tx.nomorBon,
-      tanggal: tx.tanggal.toISOString(),
+      tanggal: tx.tanggal,
       total: tx.total,
       status: tx.status,
       isBonus: tx.isBonus,

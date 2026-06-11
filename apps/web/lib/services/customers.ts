@@ -207,7 +207,7 @@ export type CustomerMonthlyTotals = {
 export type CustomerMonthlyTransaction = {
   id: string;
   nomorBon: string;
-  tanggal: Date;
+  tanggal: string;
   status: "PIUTANG" | "LUNAS";
   isBonus: boolean;
   total: number;

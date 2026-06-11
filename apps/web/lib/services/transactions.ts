@@ -65,7 +65,8 @@ export type TransactionTableRow = {
   nomorBon: string;
   customerId: string;
   customerName: string;
-  tanggal: Date;
+  /** ISO string — serializable for unstable_cache */
+  tanggal: string;
   total: number;
   status: TransactionStatus;
   isBonus: boolean;
@@ -175,7 +176,7 @@ async function fetchTransactionsForTable(
     nomorBon: row.nomorBon,
     customerId: row.customerId,
     customerName: row.customerName,
-    tanggal: row.tanggal,
+    tanggal: new Date(row.tanggal).toISOString(),
     total: Number(row.lineTotal) + Number(row.ongkir),
     status: row.status,
     isBonus: row.isBonus,
