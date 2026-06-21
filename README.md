@@ -76,7 +76,7 @@ Buka http://localhost:3000 — login dengan `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 ## Login Default (dev)
 
-- Email: `admin@hl.local`
-- Password: `admin123`
+- Email: `abyan@dummy-email.com`
+- Password: `Abyannn123`
 
 Ganti di `.env` sebelum production.
