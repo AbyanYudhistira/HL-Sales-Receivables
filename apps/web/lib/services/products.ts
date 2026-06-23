@@ -2,6 +2,7 @@ import { prisma, type ProductType } from "@hl/database";
 import { unstable_cache } from "next/cache";
 
 import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
+import { PRODUCTS_PAGE_SIZE } from "@/lib/constants";
 
 async function fetchProducts() {
   return prisma.product.findMany({
@@ -61,4 +62,36 @@ export async function softDeleteProduct(id: string) {
     where: { id },
     data: { deletedAt: new Date() },
   });
+}
+
+export type ProductTableResult = {
+  rows: Awaited<ReturnType<typeof listProducts>>;
+  totalCount: number;
+};
+
+export async function listProductsForTable(options: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<ProductTableResult> {
+  const pageSize = options.pageSize ?? PRODUCTS_PAGE_SIZE;
+  const page = Math.max(1, options.page ?? 1);
+  const search = options.search?.trim();
+
+  const where = {
+    deletedAt: null,
+    ...(search ? { nama: { contains: search, mode: "insensitive" as const } } : {}),
+  };
+
+  const [totalCount, rows] = await Promise.all([
+    prisma.product.count({ where }),
+    prisma.product.findMany({
+      where,
+      orderBy: { nama: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+
+  return { rows, totalCount };
 }

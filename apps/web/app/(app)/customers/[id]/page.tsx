@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { CustomerDetailClient } from "@/components/customers/customer-detail-client";
+import { parseMonthYear } from "@/lib/parse-search-params";
 import * as customerService from "@/lib/services/customers";
 import * as transactionService from "@/lib/services/transactions";
 
@@ -13,10 +14,7 @@ export default async function CustomerDetailPage({
 }) {
   const { id } = await params;
   const query = await searchParams;
-
-  const now = new Date();
-  const year = Number(query.year ?? now.getFullYear());
-  const month = Number(query.month ?? now.getMonth() + 1);
+  const { month, year } = parseMonthYear(query);
 
   const customer = await customerService.getCustomerById(id);
   if (!customer) notFound();

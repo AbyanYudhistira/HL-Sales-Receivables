@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { DownloadPdfButton } from "@/components/pdf/download-pdf-button";
 import { sanitizeFilename } from "@/lib/pdf/filename";
-import { showSuccessToast } from "@/lib/toast";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import {
   formatDateLong,
   formatDiscountSteps,
@@ -169,7 +169,12 @@ export function TransactionDetailClient({
         destructive
         onCancel={() => setDeleteOpen(false)}
         onConfirm={async () => {
-          await deleteTransactionAction(transactionId);
+          const result = await deleteTransactionAction(transactionId);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menghapus bon");
+            setDeleteOpen(false);
+            return;
+          }
           router.push("/transactions");
         }}
       />
@@ -181,7 +186,11 @@ export function TransactionDetailClient({
         confirmLabel="Ya, lanjutkan"
         onCancel={() => setPaymentOpen(false)}
         onConfirm={async (date) => {
-          await settleTransactionAction(transactionId, date);
+          const result = await settleTransactionAction(transactionId, date);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menandai sudah bayar");
+            return;
+          }
           setPaymentOpen(false);
           showSuccessToast("Bon ditandai Sudah Bayar.");
           router.refresh();

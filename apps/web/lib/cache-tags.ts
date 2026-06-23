@@ -11,6 +11,8 @@ export const CACHE_TAGS = {
 
 export const CACHE_REVALIDATE_SECONDS = 60;
 
+// placeholder for agent mode test
+
 export function revalidateSalesData() {
   revalidateTag(CACHE_TAGS.dashboard);
   revalidateTag(CACHE_TAGS.reports);

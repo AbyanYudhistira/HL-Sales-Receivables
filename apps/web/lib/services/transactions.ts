@@ -58,7 +58,9 @@ export async function listTransactions(filters?: {
   });
 }
 
-export const TRANSACTIONS_PAGE_SIZE = 20;
+import { TRANSACTIONS_PAGE_SIZE } from "@/lib/constants";
+
+export { TRANSACTIONS_PAGE_SIZE };
 
 export type TransactionTableRow = {
   id: string;

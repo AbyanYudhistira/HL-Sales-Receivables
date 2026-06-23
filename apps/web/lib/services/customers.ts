@@ -1,7 +1,8 @@
-import { prisma } from "@hl/database";
+import { Prisma, prisma } from "@hl/database";
 import { unstable_cache } from "next/cache";
 
 import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
+import { CUSTOMERS_PAGE_SIZE } from "@/lib/constants";
 
 import * as transactionService from "@/lib/services/transactions";
 
@@ -213,7 +214,7 @@ export type CustomerMonthlyTransaction = {
   total: number;
 };
 
-export async function getCustomerMonthlySummary(
+async function fetchCustomerMonthlySummary(
   customerId: string,
   year: number,
   month: number
@@ -350,4 +351,128 @@ export async function getCustomerMonthlySummary(
       omzetBr: Number(typeRows.find((row) => row.tipe === "BR")?.omzet ?? 0),
     },
   };
+}
+
+
+export type CustomerTableRow = {
+  id: string;
+  nama: string;
+  totalUnpaid: number;
+  totalPaid: number;
+  bonusAvailable: number;
+};
+
+export async function listCustomersForTable(options: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<{ rows: CustomerTableRow[]; totalCount: number }> {
+  const pageSize = options.pageSize ?? CUSTOMERS_PAGE_SIZE;
+  const page = Math.max(1, options.page ?? 1);
+  const search = options.search?.trim();
+
+  const where = {
+    deletedAt: null,
+    ...(search ? { nama: { contains: search, mode: "insensitive" as const } } : {}),
+  };
+
+  const [totalCount, customers] = await Promise.all([
+    prisma.customer.count({ where }),
+    prisma.customer.findMany({
+      where,
+      select: { id: true, nama: true, bonusThreshold: true },
+      orderBy: { nama: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+
+  if (customers.length === 0) {
+    return { rows: [], totalCount };
+  }
+
+  const idList = Prisma.join(customers.map((customer) => Prisma.sql`${customer.id}`));
+
+  const summaryRows = await prisma.$queryRaw<
+    { id: string; totalUnpaid: unknown; totalPaid: unknown }[]
+  >`
+    WITH tx_totals AS (
+      SELECT
+        t.id,
+        t."customerId",
+        t.status,
+        t.ongkir,
+        COALESCE(
+          SUM(
+            CASE
+              WHEN tl."isBonusLine" THEN 0
+              ELSE tl."discountedUnitPrice" * tl.quantity
+            END
+          ),
+          0
+        ) AS line_total
+      FROM "Transaction" t
+      LEFT JOIN "TransactionLine" tl ON tl."transactionId" = t.id
+      WHERE t."customerId" IN (${idList})
+      GROUP BY t.id, t."customerId", t.status, t.ongkir
+    )
+    SELECT
+      c.id,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN tt.status = 'PIUTANG'::"TransactionStatus"
+            THEN tt.line_total + tt.ongkir
+            ELSE 0
+          END
+        ),
+        0
+      ) AS "totalUnpaid",
+      COALESCE(
+        SUM(
+          CASE
+            WHEN tt.status = 'LUNAS'::"TransactionStatus"
+            THEN tt.line_total + tt.ongkir
+            ELSE 0
+          END
+        ),
+        0
+      ) AS "totalPaid"
+    FROM "Customer" c
+    LEFT JOIN tx_totals tt ON tt."customerId" = c.id
+    WHERE c.id IN (${idList})
+    GROUP BY c.id
+  `;
+
+  const bonusMap = await transactionService.getBonusAvailableMap(customers);
+  const summaryById = new Map(summaryRows.map((row) => [row.id, row]));
+
+  return {
+    totalCount,
+    rows: customers.map((customer) => {
+      const summary = summaryById.get(customer.id);
+      return {
+        id: customer.id,
+        nama: customer.nama,
+        totalUnpaid: Number(summary?.totalUnpaid ?? 0),
+        totalPaid: Number(summary?.totalPaid ?? 0),
+        bonusAvailable: bonusMap.get(customer.id) ?? 0,
+      };
+    }),
+  };
+}
+
+export async function getCustomerMonthlySummary(
+  customerId: string,
+  year: number,
+  month: number
+) {
+  return unstable_cache(
+    () => fetchCustomerMonthlySummary(customerId, year, month),
+    ["customer-monthly-summary", customerId, String(year), String(month)],
+    {
+      revalidate: CACHE_REVALIDATE_SECONDS,
+      tags: [CACHE_TAGS.customersSummary, CACHE_TAGS.transactionsList],
+    }
+  )();
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { TRANSACTIONS_PAGE_SIZE } from "@/lib/constants";
 import { GiftBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,8 +24,6 @@ import {
   formatIdr,
   INDONESIAN_MONTHS,
 } from "@/lib/format-idr";
-
-const PAGE_SIZE = 20;
 
 type TransactionRow = {
   id: string;
@@ -67,8 +66,8 @@ export function TransactionsPageClient({
     return customers.find((customer) => customer.id === initialCustomerId)?.nama ?? "";
   });
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const showPagination = totalCount > PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalCount / TRANSACTIONS_PAGE_SIZE));
+  const showPagination = totalCount > TRANSACTIONS_PAGE_SIZE;
 
   function buildParams(page: number) {
     const params = new URLSearchParams();
@@ -191,19 +190,7 @@ export function TransactionsPageClient({
             </TableHead>
             <TableBody>
               {transactions.map((tx) => (
-                <TableRow
-                  key={tx.id}
-                  role="button"
-                  tabIndex={0}
-                  className="cursor-pointer hover:bg-accent/30"
-                  onClick={() => router.push(`/transactions/${tx.id}`)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      router.push(`/transactions/${tx.id}`);
-                    }
-                  }}
-                >
+                <TableRow key={tx.id} className="hover:bg-accent/30">
                   <TableCell>{formatDateShort(new Date(tx.tanggal))}</TableCell>
                   <TableCell className="font-medium">
                     {tx.nomorBon}
@@ -217,7 +204,7 @@ export function TransactionsPageClient({
                     <StatusBadge status={tx.status === "LUNAS" ? "paid" : "unpaid"} />
                   </TableCell>
                   <TableCell>
-                    <Link href={`/transactions/${tx.id}`} onClick={(event) => event.stopPropagation()}>
+                    <Link href={`/transactions/${tx.id}`}>
                       <Button variant="ghost">Lihat</Button>
                     </Link>
                   </TableCell>

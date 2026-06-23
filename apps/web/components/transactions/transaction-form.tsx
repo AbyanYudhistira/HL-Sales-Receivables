@@ -113,6 +113,22 @@ export function TransactionForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (!customerId) {
+      const message = "Pelanggan wajib dipilih";
+      setError(message);
+      showErrorToast(message);
+      return;
+    }
+
+    const validLines = lines.filter((line) => line.productId && line.quantity > 0);
+    if (validLines.length === 0) {
+      const message = "Minimal 1 produk";
+      setError(message);
+      showErrorToast(message);
+      return;
+    }
+
     setPending(true);
 
     const form = event.currentTarget;

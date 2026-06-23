@@ -8,6 +8,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { IntegerInput, toIntegerString } from "@/components/ui/integer-input";
 import { Label } from "@/components/ui/label";
+import { showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 export function ProductFormDialog({
@@ -45,22 +46,30 @@ export function ProductFormDialog({
 
     setPending(true);
 
-    const formData = new FormData();
-    formData.set("nama", nama);
-    formData.set("hargaBase", hargaJual);
-    formData.set("hargaModal", hargaModal);
-    formData.set("tipe", tipe);
-    formData.set("modal", "true");
+    try {
+      const formData = new FormData();
+      formData.set("nama", nama);
+      formData.set("hargaBase", hargaJual);
+      formData.set("hargaModal", hargaModal);
+      formData.set("tipe", tipe);
+      formData.set("modal", "true");
 
-    if (productId) {
-      await updateProductAction(productId, formData);
-    } else {
-      await saveProductAction(formData);
+      const result = productId
+        ? await updateProductAction(productId, formData)
+        : await saveProductAction(formData);
+
+      if (result && "success" in result && !result.success) {
+        showErrorToast(result.error ?? "Gagal menyimpan barang");
+        return;
+      }
+
+      onSaved?.();
+      onClose();
+    } catch {
+      showErrorToast("Gagal menyimpan barang");
+    } finally {
+      setPending(false);
     }
-
-    setPending(false);
-    onSaved?.();
-    onClose();
   }
 
   return (
@@ -125,7 +134,7 @@ export function ProductFormDialog({
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
             Batal
           </Button>
           <Button type="submit" size="lg" disabled={pending}>

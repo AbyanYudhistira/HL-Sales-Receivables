@@ -1,5 +1,6 @@
-import * as customerService from "@/lib/services/customers";
+﻿import * as customerService from "@/lib/services/customers";
 import * as transactionService from "@/lib/services/transactions";
+import { parseMonthYear, parsePage } from "@/lib/parse-search-params";
 
 import { TransactionsPageClient } from "@/components/transactions/transactions-page-client";
 
@@ -15,12 +16,10 @@ export default async function TransactionsPage({
   }>;
 }) {
   const query = await searchParams;
-  const now = new Date();
-  const month = Number(query.month ?? now.getMonth() + 1);
-  const year = Number(query.year ?? now.getFullYear());
+  const { month, year } = parseMonthYear(query);
   const status = query.status ?? "all";
   const customerId = query.customerId ?? "";
-  const page = Math.max(1, Number(query.page ?? 1));
+  const page = parsePage(query.page);
 
   const [transactionResult, customers] = await Promise.all([
     transactionService.listTransactionsForTable({

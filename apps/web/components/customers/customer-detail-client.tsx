@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { DownloadPdfButton } from "@/components/pdf/download-pdf-button";
 import { sanitizeFilename } from "@/lib/pdf/filename";
-import { showSuccessToast } from "@/lib/toast";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import {
   formatDateShort,
   formatDiscountSteps,
@@ -184,6 +184,13 @@ export function CustomerDetailClient({
             </TableRow>
           </TableHead>
           <TableBody>
+            {transactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="py-12 text-muted-foreground">
+                  Tidak ada transaksi untuk bulan ini.
+                </TableCell>
+              </TableRow>
+            ) : null}
             {transactions.map((tx) => (
               <TableRow key={tx.id}>
                 <TableCell>{formatDateShort(new Date(tx.tanggal))}</TableCell>
@@ -234,7 +241,12 @@ export function CustomerDetailClient({
         destructive
         onCancel={() => setDeleteOpen(false)}
         onConfirm={async () => {
-          await deleteCustomerAction(customerId);
+          const result = await deleteCustomerAction(customerId);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menghapus pelanggan");
+            setDeleteOpen(false);
+            return;
+          }
           router.push("/customers");
         }}
       />
@@ -246,9 +258,13 @@ export function CustomerDetailClient({
         confirmLabel="Ya, tandai sudah bayar"
         onCancel={() => setPaymentOpen(false)}
         onConfirm={async (date) => {
-          const count = await settleMonthAction(customerId, year, month, date);
+          const result = await settleMonthAction(customerId, year, month, date);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menandai bulan sudah bayar");
+            return;
+          }
           setPaymentOpen(false);
-          showSuccessToast(`${count} bon ditandai Sudah Bayar.`);
+          showSuccessToast(`${result.count} bon ditandai Sudah Bayar.`);
           router.refresh();
         }}
       />
