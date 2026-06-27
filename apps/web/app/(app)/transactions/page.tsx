@@ -57,7 +57,6 @@ export default async function TransactionsPage({
         total: tx.total,
         status: tx.status,
         isBonus: tx.isBonus,
-        productTypes: tx.productTypes,
       }))}
     />
   );

@@ -34,7 +34,6 @@ type TransactionRow = {
   total: number;
   status: "PIUTANG" | "LUNAS";
   isBonus: boolean;
-  productTypes: string;
 };
 
 type CustomerOption = { id: string; nama: string };
@@ -201,7 +200,6 @@ export function TransactionsPageClient({
               <TableRow>
                 <TableHeader>Tanggal</TableHeader>
                 <TableHeader>No. Bon</TableHeader>
-                <TableHeader>Tipe</TableHeader>
                 <TableHeader>Pelanggan</TableHeader>
                 <TableHeader>Total</TableHeader>
                 <TableHeader>Status</TableHeader>
@@ -218,7 +216,6 @@ export function TransactionsPageClient({
                       <GiftBadge className="ml-2">Bonus</GiftBadge>
                     )}
                   </TableCell>
-                  <TableCell>{tx.productTypes}</TableCell>
                   <TableCell>{tx.customerName}</TableCell>
                   <TableCell>{formatIdr(tx.total)}</TableCell>
                   <TableCell>
