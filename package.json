@@ -8,6 +8,7 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "db:migrate": "pnpm --filter @hl/database run db:migrate",
+    "db:migrate:deploy": "pnpm --filter @hl/database run db:migrate:deploy",
     "db:seed": "pnpm --filter @hl/database run db:seed",
     "db:studio": "pnpm --filter @hl/database run db:studio",
     "db:generate": "pnpm --filter @hl/database run db:generate"

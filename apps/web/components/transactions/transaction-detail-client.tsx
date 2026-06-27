@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { DownloadPdfButton } from "@/components/pdf/download-pdf-button";
 import { sanitizeFilename } from "@/lib/pdf/filename";
-import { showSuccessToast } from "@/lib/toast";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import {
   formatDateLong,
   formatDiscountSteps,
@@ -34,6 +34,7 @@ import {
 type LineRow = {
   id: string;
   nama: string;
+  tipe: "LM" | "BR";
   quantity: number;
   discountedUnitPrice: number;
   subtotal: number;
@@ -89,7 +90,7 @@ export function TransactionDetailClient({
           </div>
           <div className="flex flex-wrap gap-2">
             <StatusBadge status={status === "LUNAS" ? "paid" : "unpaid"} />
-            {isBonus && <GiftBadge>Hadiah</GiftBadge>}
+            {isBonus && <GiftBadge>Bonus</GiftBadge>}
           </div>
         </div>
       </Card>
@@ -99,6 +100,7 @@ export function TransactionDetailClient({
           <TableHead>
             <TableRow>
               <TableHeader>Nama</TableHeader>
+              <TableHeader>Tipe</TableHeader>
               <TableHeader>Qty</TableHeader>
               <TableHeader>Harga setelah diskon</TableHeader>
               <TableHeader>Subtotal</TableHeader>
@@ -108,6 +110,7 @@ export function TransactionDetailClient({
             {lines.map((line) => (
               <TableRow key={line.id}>
                 <TableCell>{line.nama}</TableCell>
+                <TableCell>{line.tipe}</TableCell>
                 <TableCell>{line.quantity}</TableCell>
                 <TableCell>{formatIdr(line.discountedUnitPrice)}</TableCell>
                 <TableCell>{formatIdr(line.subtotal)}</TableCell>
@@ -169,7 +172,12 @@ export function TransactionDetailClient({
         destructive
         onCancel={() => setDeleteOpen(false)}
         onConfirm={async () => {
-          await deleteTransactionAction(transactionId);
+          const result = await deleteTransactionAction(transactionId);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menghapus bon");
+            setDeleteOpen(false);
+            return;
+          }
           router.push("/transactions");
         }}
       />
@@ -181,7 +189,11 @@ export function TransactionDetailClient({
         confirmLabel="Ya, lanjutkan"
         onCancel={() => setPaymentOpen(false)}
         onConfirm={async (date) => {
-          await settleTransactionAction(transactionId, date);
+          const result = await settleTransactionAction(transactionId, date);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menandai sudah bayar");
+            return;
+          }
           setPaymentOpen(false);
           showSuccessToast("Bon ditandai Sudah Bayar.");
           router.refresh();

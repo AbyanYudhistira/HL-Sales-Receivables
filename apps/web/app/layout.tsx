@@ -21,7 +21,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Buku Toko",
+  title: "HL Sales",
   description: "Catatan penjualan, pelanggan, dan tagihan toko",
 };
 

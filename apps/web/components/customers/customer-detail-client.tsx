@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PaymentDateDialog } from "@/components/ui/payment-date-dialog";
+import { LabaVisibilityToggle } from "@/components/ui/laba-visibility-toggle";
 import { Select } from "@/components/ui/select";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/badge";
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { DownloadPdfButton } from "@/components/pdf/download-pdf-button";
 import { sanitizeFilename } from "@/lib/pdf/filename";
-import { showSuccessToast } from "@/lib/toast";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import {
   formatDateShort,
   formatDiscountSteps,
@@ -35,6 +36,7 @@ import {
   INDONESIAN_MONTHS,
   parseDiscountSteps,
 } from "@/lib/format-idr";
+import { formatLabaDisplay } from "@/lib/format-laba";
 
 type TransactionRow = {
   id: string;
@@ -53,6 +55,8 @@ export function CustomerDetailClient({
   totals,
   transactions,
   bonusAvailable,
+  paidOmzet,
+  bonusProgress,
 }: {
   customerId: string;
   customer: {
@@ -73,11 +77,18 @@ export function CustomerDetailClient({
   };
   transactions: TransactionRow[];
   bonusAvailable: number;
+  paidOmzet: number;
+  bonusProgress: {
+    progressAmount: number;
+    remainingAmount: number;
+    percent: number;
+  };
 }) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [showLaba, setShowLaba] = useState(true);
 
   const discountLm = parseDiscountSteps(customer.discountLm);
   const discountBr = parseDiscountSteps(customer.discountBr);
@@ -101,11 +112,11 @@ export function CustomerDetailClient({
                 {customer.nama}
               </h1>
               {bonusAvailable > 0 && (
-                <GiftBadge>{bonusAvailable} hadiah tersedia</GiftBadge>
+                <GiftBadge>{bonusAvailable} bonus tersedia</GiftBadge>
               )}
             </div>
             <p className="text-base text-muted-foreground">
-              Batas hadiah {formatIdr(customer.bonusThreshold)} · Diskon LM{" "}
+              Batas bonus {formatIdr(customer.bonusThreshold)} · Diskon LM{" "}
               {formatDiscountSteps(discountLm)} · Diskon BR {formatDiscountSteps(discountBr)}
             </p>
             <p className="text-sm text-muted-foreground">Diskon dihitung bertahap.</p>
@@ -121,6 +132,33 @@ export function CustomerDetailClient({
           </div>
         </div>
       </div>
+
+      {customer.bonusThreshold > 0 && (
+        <Card className="p-6">
+          <p className="text-lg font-semibold text-foreground">
+            Total Bonus: {bonusAvailable}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Omzet lunas {formatIdr(paidOmzet)}
+          </p>
+          <div
+            role="progressbar"
+            aria-valuenow={Math.round(bonusProgress.percent)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progress menuju bonus berikutnya"
+            className="mt-4 h-3 overflow-hidden rounded-full bg-muted"
+          >
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${bonusProgress.percent}%` }}
+            />
+          </div>
+          <p className="mt-3 text-base text-muted-foreground">
+            {formatIdr(bonusProgress.remainingAmount)} lagi untuk bonus berikutnya
+          </p>
+        </Card>
+      )}
 
       <Card>
         <form method="get" className="flex flex-wrap gap-3">
@@ -164,7 +202,15 @@ export function CustomerDetailClient({
           icon={BarChart3}
           tone="default"
         />
-        <StatCard label="Laba" value={formatIdr(totals.totalLaba)} icon={BarChart3} tone="default" />
+        <StatCard
+          label="Laba"
+          value={formatLabaDisplay(totals.totalLaba, showLaba)}
+          icon={BarChart3}
+          tone="default"
+          valueAction={
+            <LabaVisibilityToggle visible={showLaba} onToggle={setShowLaba} />
+          }
+        />
       </section>
 
       <Card className="p-0">
@@ -184,10 +230,20 @@ export function CustomerDetailClient({
             </TableRow>
           </TableHead>
           <TableBody>
+            {transactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="py-12 text-muted-foreground">
+                  Tidak ada transaksi untuk bulan ini.
+                </TableCell>
+              </TableRow>
+            ) : null}
             {transactions.map((tx) => (
               <TableRow key={tx.id}>
                 <TableCell>{formatDateShort(new Date(tx.tanggal))}</TableCell>
-                <TableCell className="font-medium">{tx.nomorBon}</TableCell>
+                <TableCell className="font-medium">
+                  {tx.nomorBon}
+                  {tx.isBonus && <GiftBadge className="ml-2">Bonus</GiftBadge>}
+                </TableCell>
                 <TableCell>{formatIdr(tx.total)}</TableCell>
                 <TableCell>
                   <StatusBadge status={tx.status === "LUNAS" ? "paid" : "unpaid"} />
@@ -234,7 +290,12 @@ export function CustomerDetailClient({
         destructive
         onCancel={() => setDeleteOpen(false)}
         onConfirm={async () => {
-          await deleteCustomerAction(customerId);
+          const result = await deleteCustomerAction(customerId);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menghapus pelanggan");
+            setDeleteOpen(false);
+            return;
+          }
           router.push("/customers");
         }}
       />
@@ -246,9 +307,13 @@ export function CustomerDetailClient({
         confirmLabel="Ya, tandai sudah bayar"
         onCancel={() => setPaymentOpen(false)}
         onConfirm={async (date) => {
-          const count = await settleMonthAction(customerId, year, month, date);
+          const result = await settleMonthAction(customerId, year, month, date);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menandai bulan sudah bayar");
+            return;
+          }
           setPaymentOpen(false);
-          showSuccessToast(`${count} bon ditandai Sudah Bayar.`);
+          showSuccessToast(`${result.count} bon ditandai Sudah Bayar.`);
           router.refresh();
         }}
       />

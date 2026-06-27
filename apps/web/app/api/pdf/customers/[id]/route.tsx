@@ -31,7 +31,8 @@ export async function GET(
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const period = parseMonthYear(new URL(request.url).searchParams);
+  const searchParams = new URL(request.url).searchParams;
+  const period = parseMonthYear(searchParams);
   if (!period) {
     return new Response("Bad Request", { status: 400 });
   }

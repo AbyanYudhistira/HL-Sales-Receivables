@@ -113,6 +113,22 @@ export function TransactionForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (!customerId) {
+      const message = "Pelanggan wajib dipilih";
+      setError(message);
+      showErrorToast(message);
+      return;
+    }
+
+    const validLines = lines.filter((line) => line.productId && line.quantity > 0);
+    if (validLines.length === 0) {
+      const message = "Minimal 1 produk";
+      setError(message);
+      showErrorToast(message);
+      return;
+    }
+
     setPending(true);
 
     const form = event.currentTarget;
@@ -218,7 +234,7 @@ export function TransactionForm({
             </Select>
             {customer && customer.bonusAvailable > 0 && (
               <p className="mt-2 text-sm text-muted-foreground">
-                Pelanggan ini punya {customer.bonusAvailable} hadiah tersedia.
+                Pelanggan ini punya {customer.bonusAvailable} bonus tersedia.
               </p>
             )}
           </div>
@@ -328,12 +344,12 @@ export function TransactionForm({
             checked={isBonus}
             onCheckedChange={setIsBonus}
             disabled={!customer || customer.bonusAvailable <= 0}
-            label="Pakai hadiah untuk bon ini"
+            label="Pakai bonus untuk bon ini"
           />
           {isBonus && (
             <>
               <input type="hidden" name="bonusCount" value="1" />
-              <p className="text-sm text-muted-foreground">1 hadiah dipakai untuk bon ini.</p>
+              <p className="text-sm text-muted-foreground">1 bonus dipakai untuk bon ini.</p>
             </>
           )}
           {!initial && (

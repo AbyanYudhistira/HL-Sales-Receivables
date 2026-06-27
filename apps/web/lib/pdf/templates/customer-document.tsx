@@ -39,7 +39,7 @@ export function CustomerDocument({ data }: { data: CustomerPdfData }) {
     <Document title={`Pelanggan ${data.customerName}`}>
       <Page size="A4" style={pdfStyles.page}>
         <View style={pdfStyles.header}>
-          <Text style={pdfStyles.brand}>Buku Toko HL</Text>
+          <Text style={pdfStyles.brand}>HL Sales</Text>
           <Text style={pdfStyles.title}>{data.customerName}</Text>
           <Text style={pdfStyles.subtitle}>
             Rekap {formatMonthYear(data.month, data.year)}
@@ -48,11 +48,11 @@ export function CustomerDocument({ data }: { data: CustomerPdfData }) {
 
         <Text style={pdfStyles.sectionTitle}>Informasi</Text>
         <View style={pdfStyles.row}>
-          <Text style={pdfStyles.rowLabel}>Batas Hadiah</Text>
+          <Text style={pdfStyles.rowLabel}>Batas Bonus</Text>
           <Text style={pdfStyles.rowValue}>{formatIdr(data.bonusThreshold)}</Text>
         </View>
         <View style={pdfStyles.row}>
-          <Text style={pdfStyles.rowLabel}>Hadiah tersedia</Text>
+          <Text style={pdfStyles.rowLabel}>Bonus tersedia</Text>
           <Text style={pdfStyles.rowValue}>{data.bonusAvailable}</Text>
         </View>
         <Text style={{ fontSize: 10, color: colors.muted, marginTop: 4 }}>
@@ -72,10 +72,6 @@ export function CustomerDocument({ data }: { data: CustomerPdfData }) {
         <View style={pdfStyles.row}>
           <Text style={pdfStyles.rowLabel}>Omzet</Text>
           <Text style={pdfStyles.rowValue}>{formatIdr(data.totals.totalOmzet)}</Text>
-        </View>
-        <View style={pdfStyles.row}>
-          <Text style={pdfStyles.rowLabel}>Laba</Text>
-          <Text style={pdfStyles.rowValue}>{formatIdr(data.totals.totalLaba)}</Text>
         </View>
         <Text style={{ fontSize: 9, color: colors.muted, marginTop: 4 }}>
           Omzet LM {formatIdr(data.totals.omzetLm)} · Omzet BR {formatIdr(data.totals.omzetBr)}
@@ -104,7 +100,7 @@ export function CustomerDocument({ data }: { data: CustomerPdfData }) {
                   </Text>
                   <Text style={[pdfStyles.td, { width: "28%" }]}>
                     {tx.nomorBon}
-                    {tx.isBonus ? " (Hadiah)" : ""}
+                    {tx.isBonus ? " (Bonus)" : ""}
                   </Text>
                   <Text style={[pdfStyles.td, { width: "25%", textAlign: "right" }]}>
                     {formatIdr(tx.total)}
@@ -118,7 +114,7 @@ export function CustomerDocument({ data }: { data: CustomerPdfData }) {
           </View>
         )}
 
-        <Text style={pdfStyles.footer}>Dicetak dari HL App · Buku Toko</Text>
+        <Text style={pdfStyles.footer}>Dicetak dari HL Sales</Text>
       </Page>
     </Document>
   );

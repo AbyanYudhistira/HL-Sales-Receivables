@@ -1,5 +1,6 @@
-import * as customerService from "@/lib/services/customers";
+﻿import * as customerService from "@/lib/services/customers";
 import * as transactionService from "@/lib/services/transactions";
+import { parseMonthYear, parsePage } from "@/lib/parse-search-params";
 
 import { TransactionsPageClient } from "@/components/transactions/transactions-page-client";
 
@@ -11,16 +12,16 @@ export default async function TransactionsPage({
     year?: string;
     status?: string;
     customerId?: string;
+    tipe?: string;
     page?: string;
   }>;
 }) {
   const query = await searchParams;
-  const now = new Date();
-  const month = Number(query.month ?? now.getMonth() + 1);
-  const year = Number(query.year ?? now.getFullYear());
+  const { month, year } = parseMonthYear(query);
   const status = query.status ?? "all";
   const customerId = query.customerId ?? "";
-  const page = Math.max(1, Number(query.page ?? 1));
+  const tipe = query.tipe === "LM" || query.tipe === "BR" ? query.tipe : "all";
+  const page = parsePage(query.page);
 
   const [transactionResult, customers] = await Promise.all([
     transactionService.listTransactionsForTable({
@@ -32,6 +33,7 @@ export default async function TransactionsPage({
         ? { status: status as "LUNAS" | "PIUTANG" }
         : {}),
       ...(customerId ? { customerId } : {}),
+      ...(tipe === "LM" || tipe === "BR" ? { productType: tipe } : {}),
     }),
     customerService.listCustomerOptions(),
   ]);
@@ -42,6 +44,7 @@ export default async function TransactionsPage({
       initialYear={year}
       initialStatus={status}
       initialCustomerId={customerId}
+      initialType={tipe}
       initialPage={page}
       totalCount={transactionResult.totalCount}
       customers={customers}

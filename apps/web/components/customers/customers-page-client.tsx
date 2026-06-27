@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { GiftBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CUSTOMERS_PAGE_SIZE } from "@/lib/constants";
 import { formatIdr } from "@/lib/format-idr";
 
 type CustomerRow = {
@@ -27,43 +28,60 @@ type CustomerRow = {
   bonusAvailable: number;
 };
 
-export function CustomersPageClient({ customers }: { customers: CustomerRow[] }) {
+export function CustomersPageClient({
+  customers,
+  initialSearch,
+  initialPage,
+  totalCount,
+}: {
+  customers: CustomerRow[];
+  initialSearch: string;
+  initialPage: number;
+  totalCount: number;
+}) {
   const router = useRouter();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return customers;
-    return customers.filter((customer) => customer.nama.toLowerCase().includes(query));
-  }, [customers, search]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / CUSTOMERS_PAGE_SIZE));
+  const showPagination = totalCount > CUSTOMERS_PAGE_SIZE;
 
-  function navigateToCustomer(id: string) {
-    router.push(`/customers/${id}`);
+  function navigate(page: number) {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("search", search.trim());
+    if (page > 1) params.set("page", String(page));
+    const query = params.toString();
+    router.push(query ? `/customers?${query}` : "/customers");
   }
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-semibold text-foreground">Pelanggan</h1>
-        </div>
+        <h1 className="font-display text-3xl font-semibold text-foreground">Pelanggan</h1>
         <Button size="lg" onClick={() => setDialogOpen(true)}>
           + Tambah Pelanggan
         </Button>
       </div>
 
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        placeholder="Cari nama pelanggan..."
-        aria-label="Cari pelanggan"
-      />
+      <div className="flex flex-wrap gap-3">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama pelanggan..."
+          aria-label="Cari pelanggan"
+          className="min-w-[240px] flex-1"
+        />
+        <Button variant="secondary" onClick={() => navigate(1)}>
+          Cari
+        </Button>
+      </div>
 
-      {filtered.length === 0 ? (
+      {customers.length === 0 ? (
         <Card className="py-12 text-center">
           <p className="text-base text-muted-foreground">
-            Belum ada pelanggan. Tambahkan pelanggan pertama untuk mulai mencatat bon.
+            {initialSearch
+              ? "Tidak ada pelanggan yang cocok dengan pencarian."
+              : "Belum ada pelanggan. Tambahkan pelanggan pertama untuk mulai mencatat bon."}
           </p>
         </Card>
       ) : (
@@ -74,38 +92,25 @@ export function CustomersPageClient({ customers }: { customers: CustomerRow[] })
                 <TableHeader>Nama</TableHeader>
                 <TableHeader>Total Belum Bayar</TableHeader>
                 <TableHeader>Total Sudah Bayar</TableHeader>
-                <TableHeader>Hadiah</TableHeader>
+                <TableHeader>Bonus</TableHeader>
                 <TableHeader>Aksi</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filtered.map((customer) => (
-                <TableRow
-                  key={customer.id}
-                  role="button"
-                  tabIndex={0}
-                  className="cursor-pointer hover:bg-accent/30"
-                  onClick={() => navigateToCustomer(customer.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      navigateToCustomer(customer.id);
-                    }
-                  }}
-                >
+              {customers.map((customer) => (
+                <TableRow key={customer.id} className="hover:bg-accent/30">
                   <TableCell className="font-medium text-foreground">{customer.nama}</TableCell>
                   <TableCell>{formatIdr(customer.totalUnpaid)}</TableCell>
                   <TableCell>{formatIdr(customer.totalPaid)}</TableCell>
                   <TableCell>
                     {customer.bonusAvailable > 0 ? (
-                      <GiftBadge>Dapat {customer.bonusAvailable} Hadiah</GiftBadge>
-                    ) : null}
+                      <GiftBadge>Dapat {customer.bonusAvailable} Bonus</GiftBadge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <Link
-                      href={`/customers/${customer.id}`}
-                      onClick={(event) => event.stopPropagation()}
-                    >
+                    <Link href={`/customers/${customer.id}`}>
                       <Button variant="ghost">Lihat</Button>
                     </Link>
                   </TableCell>
@@ -114,6 +119,22 @@ export function CustomersPageClient({ customers }: { customers: CustomerRow[] })
             </TableBody>
           </Table>
         </Card>
+      )}
+
+      {showPagination && (
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p className="text-base text-muted-foreground">
+            Halaman {initialPage} dari {totalPages} ({totalCount} pelanggan)
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={initialPage <= 1} onClick={() => navigate(initialPage - 1)}>
+              Sebelumnya
+            </Button>
+            <Button variant="outline" disabled={initialPage >= totalPages} onClick={() => navigate(initialPage + 1)}>
+              Selanjutnya
+            </Button>
+          </div>
+        </div>
       )}
 
       <CustomerFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />

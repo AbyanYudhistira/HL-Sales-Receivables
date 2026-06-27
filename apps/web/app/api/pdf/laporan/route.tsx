@@ -33,9 +33,13 @@ export async function GET(request: Request) {
     return new Response("Bad Request", { status: 400 });
   }
 
+  const hideLaba = new URL(request.url).searchParams.get("hideLaba") === "1";
   const data = await reportService.getReportSummary(period.year, period.month);
   const buffer = await renderToBuffer(
-    <ReportDocument data={{ month: period.month, year: period.year, ...data }} />
+    <ReportDocument
+      data={{ month: period.month, year: period.year, ...data }}
+      hideLaba={hideLaba}
+    />
   );
   const filename = `laporan-${sanitizeFilename(formatMonthYear(period.month, period.year))}.pdf`;
 

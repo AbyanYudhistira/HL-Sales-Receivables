@@ -18,7 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { showSuccessToast } from "@/lib/toast";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
+import { SearchInput } from "@/components/ui/search-input";
+import { PRODUCTS_PAGE_SIZE } from "@/lib/constants";
 import { formatIdr } from "@/lib/format-idr";
 
 type ProductRow = {
@@ -29,12 +31,34 @@ type ProductRow = {
   hargaModal: number;
 };
 
-export function ProductsPageClient({ products }: { products: ProductRow[] }) {
+export function ProductsPageClient({
+  products,
+  initialSearch = "",
+  initialPage = 1,
+  totalCount,
+}: {
+  products: ProductRow[];
+  initialSearch?: string;
+  initialPage?: number;
+  totalCount: number;
+}) {
   const router = useRouter();
   const [showModalPrice, setShowModalPrice] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<ProductRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
+  const [search, setSearch] = useState(initialSearch);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PRODUCTS_PAGE_SIZE));
+  const showPagination = totalCount > PRODUCTS_PAGE_SIZE;
+
+  function navigate(page: number) {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("search", search.trim());
+    if (page > 1) params.set("page", String(page));
+    const query = params.toString();
+    router.push(query ? `/products?${query}` : "/products");
+  }
 
   return (
     <div className="space-y-8">
@@ -59,6 +83,26 @@ export function ProductsPageClient({ products }: { products: ProductRow[] }) {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-3">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama barang..."
+          aria-label="Cari barang"
+          className="min-w-[240px] flex-1"
+        />
+        <Button variant="secondary" onClick={() => navigate(1)}>
+          Cari
+        </Button>
+      </div>
+
+      {products.length === 0 ? (
+        <Card className="py-12 text-center">
+          <p className="text-base text-muted-foreground">
+            Belum ada barang. Tambahkan barang pertama untuk mulai mencatat penjualan.
+          </p>
+        </Card>
+      ) : (
       <Card className="p-0">
         <Table>
           <TableHead>
@@ -107,6 +151,23 @@ export function ProductsPageClient({ products }: { products: ProductRow[] }) {
           </TableBody>
         </Table>
       </Card>
+      )}
+
+      {showPagination && (
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p className="text-base text-muted-foreground">
+            Halaman {initialPage} dari {totalPages} ({totalCount} barang)
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={initialPage <= 1} onClick={() => navigate(initialPage - 1)}>
+              Sebelumnya
+            </Button>
+            <Button variant="outline" disabled={initialPage >= totalPages} onClick={() => navigate(initialPage + 1)}>
+              Selanjutnya
+            </Button>
+          </div>
+        </div>
+      )}
 
       <ProductFormDialog
         open={dialogOpen}
@@ -127,7 +188,12 @@ export function ProductsPageClient({ products }: { products: ProductRow[] }) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={async () => {
           if (!deleteTarget) return;
-          await deleteProductAction(deleteTarget.id);
+          const result = await deleteProductAction(deleteTarget.id);
+          if (result && "success" in result && !result.success) {
+            showErrorToast(result.error ?? "Gagal menghapus barang");
+            setDeleteTarget(null);
+            return;
+          }
           setDeleteTarget(null);
           showSuccessToast("Barang dihapus.");
           router.refresh();

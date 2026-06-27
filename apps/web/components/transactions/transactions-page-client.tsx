@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { TRANSACTIONS_PAGE_SIZE } from "@/lib/constants";
 import { GiftBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,8 +24,6 @@ import {
   formatIdr,
   INDONESIAN_MONTHS,
 } from "@/lib/format-idr";
-
-const PAGE_SIZE = 20;
 
 type TransactionRow = {
   id: string;
@@ -46,6 +45,7 @@ export function TransactionsPageClient({
   initialYear,
   initialStatus,
   initialCustomerId,
+  initialType,
   initialPage,
   totalCount,
 }: {
@@ -55,6 +55,7 @@ export function TransactionsPageClient({
   initialYear: number;
   initialStatus: string;
   initialCustomerId: string;
+  initialType: string;
   initialPage: number;
   totalCount: number;
 }) {
@@ -62,19 +63,21 @@ export function TransactionsPageClient({
   const [month, setMonth] = useState(initialMonth);
   const [year, setYear] = useState(initialYear);
   const [status, setStatus] = useState(initialStatus);
+  const [tipe, setTipe] = useState(initialType);
   const [customerSearch, setCustomerSearch] = useState(() => {
     if (!initialCustomerId) return "";
     return customers.find((customer) => customer.id === initialCustomerId)?.nama ?? "";
   });
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const showPagination = totalCount > PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalCount / TRANSACTIONS_PAGE_SIZE));
+  const showPagination = totalCount > TRANSACTIONS_PAGE_SIZE;
 
   function buildParams(page: number) {
     const params = new URLSearchParams();
     params.set("month", String(month));
     params.set("year", String(year));
     if (status !== "all") params.set("status", status);
+    if (tipe !== "all") params.set("tipe", tipe);
 
     const customerQuery = customerSearch.trim().toLowerCase();
     if (customerQuery) {
@@ -106,7 +109,7 @@ export function TransactionsPageClient({
       </div>
 
       <Card>
-        <div className="grid gap-4 lg:grid-cols-4">
+        <div className="grid gap-4 lg:grid-cols-5">
           <div>
             <label htmlFor="filter-month" className="mb-2 block text-sm font-medium text-muted-foreground">
               Bulan
@@ -154,6 +157,20 @@ export function TransactionsPageClient({
             </Select>
           </div>
           <div>
+            <label htmlFor="filter-tipe" className="mb-2 block text-sm font-medium text-muted-foreground">
+              Tipe
+            </label>
+            <Select
+              id="filter-tipe"
+              value={tipe}
+              onChange={(event) => setTipe(event.target.value)}
+            >
+              <option value="all">Semua</option>
+              <option value="LM">LM</option>
+              <option value="BR">BR</option>
+            </Select>
+          </div>
+          <div>
             <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Pelanggan
             </label>
@@ -191,24 +208,12 @@ export function TransactionsPageClient({
             </TableHead>
             <TableBody>
               {transactions.map((tx) => (
-                <TableRow
-                  key={tx.id}
-                  role="button"
-                  tabIndex={0}
-                  className="cursor-pointer hover:bg-accent/30"
-                  onClick={() => router.push(`/transactions/${tx.id}`)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      router.push(`/transactions/${tx.id}`);
-                    }
-                  }}
-                >
+                <TableRow key={tx.id} className="hover:bg-accent/30">
                   <TableCell>{formatDateShort(new Date(tx.tanggal))}</TableCell>
                   <TableCell className="font-medium">
                     {tx.nomorBon}
                     {tx.isBonus && (
-                      <GiftBadge className="ml-2">Hadiah</GiftBadge>
+                      <GiftBadge className="ml-2">Bonus</GiftBadge>
                     )}
                   </TableCell>
                   <TableCell>{tx.customerName}</TableCell>
@@ -217,7 +222,7 @@ export function TransactionsPageClient({
                     <StatusBadge status={tx.status === "LUNAS" ? "paid" : "unpaid"} />
                   </TableCell>
                   <TableCell>
-                    <Link href={`/transactions/${tx.id}`} onClick={(event) => event.stopPropagation()}>
+                    <Link href={`/transactions/${tx.id}`}>
                       <Button variant="ghost">Lihat</Button>
                     </Link>
                   </TableCell>

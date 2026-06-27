@@ -28,7 +28,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex items-center gap-3">
           <LoginMonogram />
           <span className="text-sm tracking-wide text-primary-foreground/90">
-            Buku catatan toko
+            HL Sales
           </span>
         </div>
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <LoginMonogram dark />
             <span className="text-sm tracking-wide text-muted-foreground">
-              Buku catatan toko
+              HL Sales
             </span>
           </div>
 

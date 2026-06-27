@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { StatCard } from "@/components/ui/stat-card";
-import { Tabs } from "@/components/ui/tabs";
+import { TabPanel, Tabs } from "@/components/ui/tabs";
 import { DownloadPdfButton } from "@/components/pdf/download-pdf-button";
 import { sanitizeFilename } from "@/lib/pdf/filename";
 import {
@@ -147,7 +147,7 @@ export function LaporanPageClient({
       />
 
       <Card className="p-0">
-        {tab === "customer" && (
+        <TabPanel id="customer" tabId="customer" active={tab}>
           <Table>
             <TableHead>
               <TableRow>
@@ -170,9 +170,9 @@ export function LaporanPageClient({
               ))}
             </TableBody>
           </Table>
-        )}
+        </TabPanel>
 
-        {tab === "type" && (
+        <TabPanel id="type" tabId="type" active={tab}>
           <Table>
             <TableHead>
               <TableRow>
@@ -191,9 +191,9 @@ export function LaporanPageClient({
               ))}
             </TableBody>
           </Table>
-        )}
+        </TabPanel>
 
-        {tab === "overall" && (
+        <TabPanel id="overall" tabId="overall" active={tab}>
           <Table>
             <TableHead>
               <TableRow>
@@ -220,7 +220,7 @@ export function LaporanPageClient({
               </TableRow>
             </TableBody>
           </Table>
-        )}
+        </TabPanel>
       </Card>
     </div>
   );

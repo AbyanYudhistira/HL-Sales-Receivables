@@ -1,11 +1,11 @@
 "use client";
 
-import { Minus } from "lucide-react";
 import { useState } from "react";
 
+import { DiscountStepsEditor } from "@/components/customers/discount-steps-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { IntegerInput, toIntegerString } from "@/components/ui/integer-input";
+import { IntegerInput } from "@/components/ui/integer-input";
 import { Label } from "@/components/ui/label";
 
 interface CustomerFormProps {
@@ -18,47 +18,6 @@ interface CustomerFormProps {
   };
   submitLabel?: string;
   returnTo?: string;
-}
-
-function DiscountStepsEditor({
-  label,
-  steps,
-  onChange,
-}: {
-  label: string;
-  steps: number[];
-  onChange: (steps: number[]) => void;
-}) {
-  return (
-    <div>
-      <Label>{label}</Label>
-      <div className="mt-2 space-y-2">
-        {steps.map((step, index) => (
-          <div key={index} className="flex gap-2">
-            <IntegerInput
-              value={toIntegerString(step)}
-              onValueChange={(value) => {
-                const next = [...steps];
-                next[index] = Math.min(100, Number(value || 0));
-                onChange(next);
-              }}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => onChange(steps.filter((_, i) => i !== index))}
-            >
-              <Minus className="size-5" />
-            </Button>
-          </div>
-        ))}
-        <Button type="button" variant="outline" onClick={() => onChange([...steps, 0])}>
-          + Tambah tingkat diskon
-        </Button>
-      </div>
-    </div>
-  );
 }
 
 export function CustomerForm({
@@ -79,7 +38,7 @@ export function CustomerForm({
       </div>
 
       <div>
-        <Label htmlFor="bonusThreshold">Batas Hadiah (Rp)</Label>
+        <Label htmlFor="bonusThreshold">Batas Bonus (Rp)</Label>
         <IntegerInput
           id="bonusThreshold"
           name="bonusThreshold"
@@ -88,7 +47,7 @@ export function CustomerForm({
           className="mt-2"
         />
         <p className="mt-2 text-sm text-muted-foreground">
-          Setiap kelipatan ini, pelanggan dapat 1 hadiah.
+          Setiap kelipatan ini, pelanggan dapat 1 bonus.
         </p>
       </div>
 

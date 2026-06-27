@@ -33,7 +33,7 @@ export function BonDocument({ data }: { data: BonPdfData }) {
     <Document title={`Bon ${data.nomorBon}`}>
       <Page size="A4" style={pdfStyles.page}>
         <View style={pdfStyles.header}>
-          <Text style={pdfStyles.brand}>Buku Toko HL</Text>
+          <Text style={pdfStyles.brand}>HL Sales</Text>
           <Text style={pdfStyles.title}>{data.nomorBon}</Text>
           <Text style={pdfStyles.subtitle}>
             {formatDateLong(new Date(data.tanggal))}
@@ -43,7 +43,7 @@ export function BonDocument({ data }: { data: BonPdfData }) {
           </View>
           {data.isBonus && (
             <View style={[pdfStyles.badge, pdfStyles.badgeGift, { marginTop: 4 }]}>
-              <Text>Hadiah</Text>
+              <Text>Bonus</Text>
             </View>
           )}
         </View>
@@ -103,7 +103,7 @@ export function BonDocument({ data }: { data: BonPdfData }) {
           </View>
         ) : null}
 
-        <Text style={pdfStyles.footer}>Dicetak dari HL App · Buku Toko</Text>
+        <Text style={pdfStyles.footer}>Dicetak dari HL Sales</Text>
       </Page>
     </Document>
   );

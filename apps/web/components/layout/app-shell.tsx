@@ -235,7 +235,7 @@ function SidebarHeader({
 
             <p className="text-base font-semibold leading-tight text-foreground">
 
-              Buku Toko
+              HL Sales
 
             </p>
 
@@ -253,7 +253,7 @@ function SidebarHeader({
 
           <p className="text-sm font-semibold leading-tight text-foreground">
 
-            Buku Toko
+            HL Sales
 
           </p>
 

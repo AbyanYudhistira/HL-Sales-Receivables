@@ -12,7 +12,7 @@ export function StatusBadge({
   const labels = {
     paid: "Sudah Bayar",
     unpaid: "Belum Bayar",
-    gift: "Hadiah",
+    gift: "Bonus",
   } as const;
 
   return (
