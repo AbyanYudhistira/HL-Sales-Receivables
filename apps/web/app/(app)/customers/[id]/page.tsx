@@ -11,23 +11,17 @@ export default async function CustomerDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ year?: string; month?: string; tipe?: string }>;
+  searchParams: Promise<{ year?: string; month?: string }>;
 }) {
   const { id } = await params;
   const query = await searchParams;
   const { month, year } = parseMonthYear(query);
-  const tipe = query.tipe === "LM" || query.tipe === "BR" ? query.tipe : "all";
 
   const customer = await customerService.getCustomerById(id);
   if (!customer) notFound();
 
   const [monthlySummary, bonusInfo] = await Promise.all([
-    customerService.getCustomerMonthlySummary(
-      id,
-      year,
-      month,
-      tipe === "LM" || tipe === "BR" ? tipe : undefined
-    ),
+    customerService.getCustomerMonthlySummary(id, year, month),
     transactionService.getCustomerBonusInfo(id),
   ]);
 
@@ -45,7 +39,6 @@ export default async function CustomerDetailPage({
       }}
       year={year}
       month={month}
-      tipe={tipe}
       totals={totals}
       bonusAvailable={bonusInfo.available}
       paidOmzet={bonusInfo.paidOmzet}
@@ -57,7 +50,6 @@ export default async function CustomerDetailPage({
         status: tx.status,
         total: tx.total,
         isBonus: tx.isBonus,
-        productTypes: tx.productTypes,
       }))}
     />
   );

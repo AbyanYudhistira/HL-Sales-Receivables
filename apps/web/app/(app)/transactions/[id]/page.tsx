@@ -37,6 +37,7 @@ export default async function TransactionDetailPage({
       lines={tx.lines.map((line) => ({
         id: line.id,
         nama: line.product.nama,
+        tipe: line.product.tipe,
         quantity: line.quantity,
         discountedUnitPrice: Number(line.discountedUnitPrice),
         subtotal: Number(line.discountedUnitPrice) * line.quantity,

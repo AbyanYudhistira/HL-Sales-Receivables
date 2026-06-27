@@ -45,7 +45,6 @@ type TransactionRow = {
   status: "PIUTANG" | "LUNAS";
   total: number;
   isBonus: boolean;
-  productTypes: string;
 };
 
 export function CustomerDetailClient({
@@ -53,7 +52,6 @@ export function CustomerDetailClient({
   customer,
   year,
   month,
-  tipe,
   totals,
   transactions,
   bonusAvailable,
@@ -69,7 +67,6 @@ export function CustomerDetailClient({
   };
   year: number;
   month: number;
-  tipe: string;
   totals: {
     totalPiutang: number;
     totalDibayar: number;
@@ -179,11 +176,6 @@ export function CustomerDetailClient({
               </option>
             ))}
           </Select>
-          <Select name="tipe" defaultValue={tipe} className="w-auto min-w-[120px]" aria-label="Tipe">
-            <option value="all">Semua tipe</option>
-            <option value="LM">LM</option>
-            <option value="BR">BR</option>
-          </Select>
           <Button type="submit" variant="secondary">
             Terapkan
           </Button>
@@ -232,7 +224,6 @@ export function CustomerDetailClient({
             <TableRow>
               <TableHeader>Tanggal</TableHeader>
               <TableHeader>No. Bon</TableHeader>
-              <TableHeader>Tipe</TableHeader>
               <TableHeader>Total</TableHeader>
               <TableHeader>Status</TableHeader>
               <TableHeader>Aksi</TableHeader>
@@ -241,7 +232,7 @@ export function CustomerDetailClient({
           <TableBody>
             {transactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-12 text-muted-foreground">
+                <TableCell colSpan={5} className="py-12 text-muted-foreground">
                   Tidak ada transaksi untuk bulan ini.
                 </TableCell>
               </TableRow>
@@ -253,7 +244,6 @@ export function CustomerDetailClient({
                   {tx.nomorBon}
                   {tx.isBonus && <GiftBadge className="ml-2">Bonus</GiftBadge>}
                 </TableCell>
-                <TableCell>{tx.productTypes}</TableCell>
                 <TableCell>{formatIdr(tx.total)}</TableCell>
                 <TableCell>
                   <StatusBadge status={tx.status === "LUNAS" ? "paid" : "unpaid"} />

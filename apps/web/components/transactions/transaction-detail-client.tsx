@@ -34,6 +34,7 @@ import {
 type LineRow = {
   id: string;
   nama: string;
+  tipe: "LM" | "BR";
   quantity: number;
   discountedUnitPrice: number;
   subtotal: number;
@@ -99,6 +100,7 @@ export function TransactionDetailClient({
           <TableHead>
             <TableRow>
               <TableHeader>Nama</TableHeader>
+              <TableHeader>Tipe</TableHeader>
               <TableHeader>Qty</TableHeader>
               <TableHeader>Harga setelah diskon</TableHeader>
               <TableHeader>Subtotal</TableHeader>
@@ -108,6 +110,7 @@ export function TransactionDetailClient({
             {lines.map((line) => (
               <TableRow key={line.id}>
                 <TableCell>{line.nama}</TableCell>
+                <TableCell>{line.tipe}</TableCell>
                 <TableCell>{line.quantity}</TableCell>
                 <TableCell>{formatIdr(line.discountedUnitPrice)}</TableCell>
                 <TableCell>{formatIdr(line.subtotal)}</TableCell>
