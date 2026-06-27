@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyCascadingDiscount,
   computeBonusAvailable,
+  computeBonusProgress,
   computeTransactionTotals,
   effectiveDiscountPercent,
 } from "../index";
@@ -84,5 +85,29 @@ describe("computeBonusAvailable", () => {
     expect(
       computeBonusAvailable(5_000_000, 10_000_000, 0)
     ).toBe(0);
+  });
+});
+
+describe("computeBonusProgress", () => {
+  it("calculates progress toward next bonus (5.6jt / 1jt threshold)", () => {
+    const result = computeBonusProgress(5_600_000, 1_000_000);
+    expect(result.progressAmount).toBe(600_000);
+    expect(result.remainingAmount).toBe(400_000);
+    expect(result.percent).toBe(60);
+  });
+
+  it("returns zeros when threshold is zero", () => {
+    expect(computeBonusProgress(5_600_000, 0)).toEqual({
+      progressAmount: 0,
+      remainingAmount: 0,
+      percent: 0,
+    });
+  });
+
+  it("resets progress at exact threshold boundary", () => {
+    const result = computeBonusProgress(5_000_000, 1_000_000);
+    expect(result.progressAmount).toBe(0);
+    expect(result.remainingAmount).toBe(1_000_000);
+    expect(result.percent).toBe(0);
   });
 });

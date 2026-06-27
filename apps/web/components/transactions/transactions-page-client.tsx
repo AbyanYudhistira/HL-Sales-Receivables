@@ -34,6 +34,7 @@ type TransactionRow = {
   total: number;
   status: "PIUTANG" | "LUNAS";
   isBonus: boolean;
+  productTypes: string;
 };
 
 type CustomerOption = { id: string; nama: string };
@@ -45,6 +46,7 @@ export function TransactionsPageClient({
   initialYear,
   initialStatus,
   initialCustomerId,
+  initialType,
   initialPage,
   totalCount,
 }: {
@@ -54,6 +56,7 @@ export function TransactionsPageClient({
   initialYear: number;
   initialStatus: string;
   initialCustomerId: string;
+  initialType: string;
   initialPage: number;
   totalCount: number;
 }) {
@@ -61,6 +64,7 @@ export function TransactionsPageClient({
   const [month, setMonth] = useState(initialMonth);
   const [year, setYear] = useState(initialYear);
   const [status, setStatus] = useState(initialStatus);
+  const [tipe, setTipe] = useState(initialType);
   const [customerSearch, setCustomerSearch] = useState(() => {
     if (!initialCustomerId) return "";
     return customers.find((customer) => customer.id === initialCustomerId)?.nama ?? "";
@@ -74,6 +78,7 @@ export function TransactionsPageClient({
     params.set("month", String(month));
     params.set("year", String(year));
     if (status !== "all") params.set("status", status);
+    if (tipe !== "all") params.set("tipe", tipe);
 
     const customerQuery = customerSearch.trim().toLowerCase();
     if (customerQuery) {
@@ -105,7 +110,7 @@ export function TransactionsPageClient({
       </div>
 
       <Card>
-        <div className="grid gap-4 lg:grid-cols-4">
+        <div className="grid gap-4 lg:grid-cols-5">
           <div>
             <label htmlFor="filter-month" className="mb-2 block text-sm font-medium text-muted-foreground">
               Bulan
@@ -153,6 +158,20 @@ export function TransactionsPageClient({
             </Select>
           </div>
           <div>
+            <label htmlFor="filter-tipe" className="mb-2 block text-sm font-medium text-muted-foreground">
+              Tipe
+            </label>
+            <Select
+              id="filter-tipe"
+              value={tipe}
+              onChange={(event) => setTipe(event.target.value)}
+            >
+              <option value="all">Semua</option>
+              <option value="LM">LM</option>
+              <option value="BR">BR</option>
+            </Select>
+          </div>
+          <div>
             <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Pelanggan
             </label>
@@ -182,6 +201,7 @@ export function TransactionsPageClient({
               <TableRow>
                 <TableHeader>Tanggal</TableHeader>
                 <TableHeader>No. Bon</TableHeader>
+                <TableHeader>Tipe</TableHeader>
                 <TableHeader>Pelanggan</TableHeader>
                 <TableHeader>Total</TableHeader>
                 <TableHeader>Status</TableHeader>
@@ -195,9 +215,10 @@ export function TransactionsPageClient({
                   <TableCell className="font-medium">
                     {tx.nomorBon}
                     {tx.isBonus && (
-                      <GiftBadge className="ml-2">Hadiah</GiftBadge>
+                      <GiftBadge className="ml-2">Bonus</GiftBadge>
                     )}
                   </TableCell>
+                  <TableCell>{tx.productTypes}</TableCell>
                   <TableCell>{tx.customerName}</TableCell>
                   <TableCell>{formatIdr(tx.total)}</TableCell>
                   <TableCell>

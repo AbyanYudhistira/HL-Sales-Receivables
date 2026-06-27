@@ -53,7 +53,7 @@ export function ProductForm({
                 defaultChecked={(initial?.tipe ?? "LM") === value}
                 className="size-4"
               />
-              {value === "LM" ? "Logam Mulia (LM)" : "Barang Reguler (BR)"}
+              {value}
             </label>
           ))}
         </div>

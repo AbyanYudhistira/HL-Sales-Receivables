@@ -92,7 +92,7 @@ export function CustomersPageClient({
                 <TableHeader>Nama</TableHeader>
                 <TableHeader>Total Belum Bayar</TableHeader>
                 <TableHeader>Total Sudah Bayar</TableHeader>
-                <TableHeader>Hadiah</TableHeader>
+                <TableHeader>Bonus</TableHeader>
                 <TableHeader>Aksi</TableHeader>
               </TableRow>
             </TableHead>
@@ -104,8 +104,10 @@ export function CustomersPageClient({
                   <TableCell>{formatIdr(customer.totalPaid)}</TableCell>
                   <TableCell>
                     {customer.bonusAvailable > 0 ? (
-                      <GiftBadge>Dapat {customer.bonusAvailable} Hadiah</GiftBadge>
-                    ) : null}
+                      <GiftBadge>Dapat {customer.bonusAvailable} Bonus</GiftBadge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Link href={`/customers/${customer.id}`}>

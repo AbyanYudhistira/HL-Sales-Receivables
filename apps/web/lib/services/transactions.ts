@@ -72,6 +72,8 @@ export type TransactionTableRow = {
   total: number;
   status: TransactionStatus;
   isBonus: boolean;
+  /** Tipe produk pada bon: "LM", "BR", "LM + BR", atau "—" */
+  productTypes: string;
 };
 
 export type TransactionTableResult = {
@@ -84,6 +86,7 @@ type TransactionTableFilters = {
   month: number;
   customerId?: string;
   status?: TransactionStatus;
+  productType?: ProductType;
   page?: number;
   pageSize?: number;
 };
@@ -100,13 +103,23 @@ function buildTransactionTableFilters(filters: TransactionTableFilters) {
     ? Prisma.sql`AND t.status = ${filters.status}::"TransactionStatus"`
     : Prisma.empty;
 
-  return { start, end, customerFilter, statusFilter };
+  const productTypeFilter = filters.productType
+    ? Prisma.sql`AND EXISTS (
+        SELECT 1 FROM "TransactionLine" tl2
+        INNER JOIN "Product" p2 ON p2.id = tl2."productId"
+        WHERE tl2."transactionId" = t.id
+          AND NOT tl2."isBonusLine"
+          AND p2.tipe = ${filters.productType}::"ProductType"
+      )`
+    : Prisma.empty;
+
+  return { start, end, customerFilter, statusFilter, productTypeFilter };
 }
 
 async function fetchTransactionsForTable(
   filters: TransactionTableFilters
 ): Promise<TransactionTableResult> {
-  const { start, end, customerFilter, statusFilter } =
+  const { start, end, customerFilter, statusFilter, productTypeFilter } =
     buildTransactionTableFilters(filters);
   const page = filters.page;
   const pageSize = filters.pageSize ?? TRANSACTIONS_PAGE_SIZE;
@@ -120,6 +133,7 @@ async function fetchTransactionsForTable(
         AND t.tanggal <= ${end}::date
         ${customerFilter}
         ${statusFilter}
+        ${productTypeFilter}
     `,
     prisma.$queryRaw<
     {
@@ -132,6 +146,7 @@ async function fetchTransactionsForTable(
       ongkir: unknown;
       status: TransactionStatus;
       isBonus: boolean;
+      productTypes: string;
     }[]
   >`
     SELECT
@@ -151,14 +166,22 @@ async function fetchTransactionsForTable(
           END
         ),
         0
-      ) AS "lineTotal"
+      ) AS "lineTotal",
+      CASE
+        WHEN COUNT(DISTINCT p.tipe) FILTER (WHERE NOT tl."isBonusLine") > 1 THEN 'LM + BR'
+        WHEN BOOL_OR(p.tipe = 'LM' AND NOT tl."isBonusLine") THEN 'LM'
+        WHEN BOOL_OR(p.tipe = 'BR' AND NOT tl."isBonusLine") THEN 'BR'
+        ELSE '—'
+      END AS "productTypes"
     FROM "Transaction" t
     INNER JOIN "Customer" c ON c.id = t."customerId"
     LEFT JOIN "TransactionLine" tl ON tl."transactionId" = t.id
+    LEFT JOIN "Product" p ON p.id = tl."productId"
     WHERE t.tanggal >= ${start}::date
       AND t.tanggal <= ${end}::date
       ${customerFilter}
       ${statusFilter}
+      ${productTypeFilter}
     GROUP BY
       t.id,
       t."nomorBon",
@@ -182,6 +205,7 @@ async function fetchTransactionsForTable(
     total: Number(row.lineTotal) + Number(row.ongkir),
     status: row.status,
     isBonus: row.isBonus,
+    productTypes: row.productTypes,
   }));
 
   return {

@@ -99,7 +99,7 @@ export function CustomerFormDialog({
         </div>
 
         <div>
-          <Label htmlFor="customer-bonus">Batas Hadiah (Rp)</Label>
+          <Label htmlFor="customer-bonus">Batas Bonus (Rp)</Label>
           <IntegerInput
             id="customer-bonus"
             value={bonusThreshold}
@@ -108,7 +108,7 @@ export function CustomerFormDialog({
             className="mt-2"
           />
           <p className="mt-2 text-sm text-muted-foreground">
-            Setiap kelipatan ini, pelanggan dapat 1 hadiah.
+            Setiap kelipatan ini, pelanggan dapat 1 bonus.
           </p>
         </div>
 

@@ -38,7 +38,7 @@ export function CustomerForm({
       </div>
 
       <div>
-        <Label htmlFor="bonusThreshold">Batas Hadiah (Rp)</Label>
+        <Label htmlFor="bonusThreshold">Batas Bonus (Rp)</Label>
         <IntegerInput
           id="bonusThreshold"
           name="bonusThreshold"
@@ -47,7 +47,7 @@ export function CustomerForm({
           className="mt-2"
         />
         <p className="mt-2 text-sm text-muted-foreground">
-          Setiap kelipatan ini, pelanggan dapat 1 hadiah.
+          Setiap kelipatan ini, pelanggan dapat 1 bonus.
         </p>
       </div>
 

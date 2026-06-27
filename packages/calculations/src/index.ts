@@ -13,5 +13,6 @@ export {
 } from "./transaction";
 export {
   computeBonusAvailable,
+  computeBonusProgress,
   computeOmzetConsumedByBonuses,
 } from "./bonus";

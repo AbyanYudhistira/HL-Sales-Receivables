@@ -1,4 +1,4 @@
-import { Prisma, prisma } from "@hl/database";
+import { Prisma, prisma, type ProductType } from "@hl/database";
 import { unstable_cache } from "next/cache";
 
 import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from "@/lib/cache-tags";
@@ -212,12 +212,14 @@ export type CustomerMonthlyTransaction = {
   status: "PIUTANG" | "LUNAS";
   isBonus: boolean;
   total: number;
+  productTypes: string;
 };
 
 async function fetchCustomerMonthlySummary(
   customerId: string,
   year: number,
-  month: number
+  month: number,
+  productType?: ProductType
 ): Promise<{
   transactions: CustomerMonthlyTransaction[];
   totals: CustomerMonthlyTotals;
@@ -230,6 +232,7 @@ async function fetchCustomerMonthlySummary(
       year,
       month,
       customerId,
+      ...(productType ? { productType } : {}),
     }),
     prisma.$queryRaw<
       {
@@ -341,6 +344,7 @@ async function fetchCustomerMonthlySummary(
       status: tx.status,
       isBonus: tx.isBonus,
       total: tx.total,
+      productTypes: tx.productTypes,
     })),
     totals: {
       totalPiutang: Number(totalsRow?.totalPiutang ?? 0),
@@ -465,11 +469,18 @@ export async function listCustomersForTable(options: {
 export async function getCustomerMonthlySummary(
   customerId: string,
   year: number,
-  month: number
+  month: number,
+  productType?: ProductType
 ) {
   return unstable_cache(
-    () => fetchCustomerMonthlySummary(customerId, year, month),
-    ["customer-monthly-summary", customerId, String(year), String(month)],
+    () => fetchCustomerMonthlySummary(customerId, year, month, productType),
+    [
+      "customer-monthly-summary",
+      customerId,
+      String(year),
+      String(month),
+      productType ?? "all",
+    ],
     {
       revalidate: CACHE_REVALIDATE_SECONDS,
       tags: [CACHE_TAGS.customersSummary, CACHE_TAGS.transactionsList],

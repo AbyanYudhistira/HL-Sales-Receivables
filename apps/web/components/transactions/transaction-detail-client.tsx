@@ -89,7 +89,7 @@ export function TransactionDetailClient({
           </div>
           <div className="flex flex-wrap gap-2">
             <StatusBadge status={status === "LUNAS" ? "paid" : "unpaid"} />
-            {isBonus && <GiftBadge>Hadiah</GiftBadge>}
+            {isBonus && <GiftBadge>Bonus</GiftBadge>}
           </div>
         </div>
       </Card>

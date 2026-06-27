@@ -105,7 +105,7 @@ export function ProductFormDialog({
                   onChange={() => setTipe(value)}
                   className="size-4"
                 />
-                {value === "LM" ? "Logam Mulia (LM)" : "Barang Reguler (BR)"}
+                {value}
               </label>
             ))}
           </div>

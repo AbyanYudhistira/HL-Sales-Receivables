@@ -12,6 +12,7 @@ export default async function TransactionsPage({
     year?: string;
     status?: string;
     customerId?: string;
+    tipe?: string;
     page?: string;
   }>;
 }) {
@@ -19,6 +20,7 @@ export default async function TransactionsPage({
   const { month, year } = parseMonthYear(query);
   const status = query.status ?? "all";
   const customerId = query.customerId ?? "";
+  const tipe = query.tipe === "LM" || query.tipe === "BR" ? query.tipe : "all";
   const page = parsePage(query.page);
 
   const [transactionResult, customers] = await Promise.all([
@@ -31,6 +33,7 @@ export default async function TransactionsPage({
         ? { status: status as "LUNAS" | "PIUTANG" }
         : {}),
       ...(customerId ? { customerId } : {}),
+      ...(tipe === "LM" || tipe === "BR" ? { productType: tipe } : {}),
     }),
     customerService.listCustomerOptions(),
   ]);
@@ -41,6 +44,7 @@ export default async function TransactionsPage({
       initialYear={year}
       initialStatus={status}
       initialCustomerId={customerId}
+      initialType={tipe}
       initialPage={page}
       totalCount={transactionResult.totalCount}
       customers={customers}
@@ -53,6 +57,7 @@ export default async function TransactionsPage({
         total: tx.total,
         status: tx.status,
         isBonus: tx.isBonus,
+        productTypes: tx.productTypes,
       }))}
     />
   );

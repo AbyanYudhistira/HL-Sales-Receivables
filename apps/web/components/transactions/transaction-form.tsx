@@ -234,7 +234,7 @@ export function TransactionForm({
             </Select>
             {customer && customer.bonusAvailable > 0 && (
               <p className="mt-2 text-sm text-muted-foreground">
-                Pelanggan ini punya {customer.bonusAvailable} hadiah tersedia.
+                Pelanggan ini punya {customer.bonusAvailable} bonus tersedia.
               </p>
             )}
           </div>
@@ -344,12 +344,12 @@ export function TransactionForm({
             checked={isBonus}
             onCheckedChange={setIsBonus}
             disabled={!customer || customer.bonusAvailable <= 0}
-            label="Pakai hadiah untuk bon ini"
+            label="Pakai bonus untuk bon ini"
           />
           {isBonus && (
             <>
               <input type="hidden" name="bonusCount" value="1" />
-              <p className="text-sm text-muted-foreground">1 hadiah dipakai untuk bon ini.</p>
+              <p className="text-sm text-muted-foreground">1 bonus dipakai untuk bon ini.</p>
             </>
           )}
           {!initial && (
